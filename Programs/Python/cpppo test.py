@@ -57,9 +57,9 @@ class FanucConnectionTester:
             with client.connector(host=self.ip_address, port=self.port, timeout=self.timeout) as conn:
                 # Request identity object (Class 1, Instance 1)
                 operations = attribute_operations(
-                    [('@1/1/1', 'INT'),  # Vendor ID
-                     ('@1/1/2', 'INT'),  # Device Type
-                     ('@1/1/3', 'INT')]  # Product Code
+                    ['@1/1/1',  # Vendor ID 
+                     '@1/1/2',  # Device Type 
+                     '@1/1/3',]  # Product Code 
                 )
                 
                 for _, desc, attrs, _ in conn.pipeline(operations=operations, depth=2):
@@ -81,12 +81,12 @@ class FanucConnectionTester:
             }
 
     def _test_tag_read(self) -> Tuple[bool, Dict[str, Any]]:
-        """Attempt to read a standard FANUC register"""
+        """Attempt to read a FANUC numeric register"""
         try:
             with client.connector(host=self.ip_address, port=self.port, timeout=self.timeout) as conn:
-                # Try reading R[1] - common FANUC register
+                # Try reading R[1]
                 operations = attribute_operations(
-                    [('@64/1', 'REAL')]  # Register Object (0x6B), Instance 1
+                    ['@6B/1/1']  # Register Object (0x6B), Instance 1, Attribute 1 (R[1])
                 )
                 
                 for _, desc, attrs, _ in conn.pipeline(operations=operations, depth=2):
