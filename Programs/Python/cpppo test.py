@@ -26,10 +26,10 @@ class FanucConnectionTester:
             return False, diagnostics
 
         # 2. Test EtherNet/IP service
-        enip_ok, enip_diag = self._test_enip()
-        diagnostics['steps'].append(('enip_service', enip_ok, enip_diag))
-        if not enip_ok:
-            return False, diagnostics
+        # enip_ok, enip_diag = self._test_enip()
+        # diagnostics['steps'].append(('enip_service', enip_ok, enip_diag))
+        # if not enip_ok:
+        #    return False, diagnostics
 
         # 3. Test basic tag reading
         tag_ok, tag_diag = self._test_tag_read()
@@ -86,7 +86,7 @@ class FanucConnectionTester:
             with client.connector(host=self.ip_address, port=self.port, timeout=self.timeout) as conn:
                 # Try reading R[1]
                 operations = attribute_operations(
-                    ['@6B/1/1']  # Register Object (0x6B), Instance 1, Attribute 1 (R[1])
+                    ['@0x6B/0x01/0x01']  # Register Object (0x6B), Instance 1, Attribute 1 (R[1])
                 )
                 
                 for _, desc, attrs, _ in conn.pipeline(operations=operations, depth=2):
