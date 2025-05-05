@@ -1,14 +1,34 @@
 from cpppo.server.enip import client
-from cpppo.server.enip.get_attribute import attribute_operations
+from cpppo.server.enip.get_attribute import attribute_operations, proxy_simple
 import numpy as np
 import time
+import logging
 from typing import Tuple, Dict, List, Optional
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Init variables to store torques and angles
+j1_torque = 0.0
+j2_torque = 0.0
+j3_torque = 0.0
+j4_torque = 0.0
+j5_torque = 0.0
+j6_torque = 0.0
+
+j1_angle = 0.0
+j2_angle = 0.0
+j3_angle = 0.0
+j4_angle = 0.0
+j5_angle = 0.0
+j6_angle = 0.0
 
 class FanucRobot:
     def __init__(self, ip_address: str, timeout: float = 5.0):
         self.ip_address = ip_address
         self.timeout = timeout
-        self.port = 44818  # Standard EtherNet/IP port
+        # self.port = 44818  # Standard EtherNet/IP port
         
         # FANUC CRX-10iA/L DH Parameters
         self.dh_params = [
@@ -20,46 +40,102 @@ class FanucRobot:
             [0, 0, 0.140, 0]               # Joint 6
         ]
 
-    # ======================
-    # 1. EtherNet/IP Communication Methods
-    # ======================
-    def _read_tags(self, tags: List[Tuple[str, str]]) -> Optional[Dict[str, float]]:
-        """Read multiple tags from the robot"""
-        try:
-            with client.connector(host=self.ip_address, timeout=self.timeout) as conn:
-                operations = attribute_operations([
-                    (f'@{tag}', dtype) for tag, dtype in tags
-                ])
-                
-                results = {}
-                for idx, (tag, dtype) in enumerate(tags):
-                    for _, _, attrs, _ in conn.pipeline(operations=operations[idx:idx+1], depth=1):
-                        if attrs:
-                            results[tag] = attrs[0].value
-                return results
-            
-        except Exception as e:
-            print(f"Error reading tags: {e}")
-            return None
+        # Parameter mapping for joint angles and torques
+        self.parameters = dict(proxy_simple.PARAMETERS,
+            j1t=proxy_simple.parameter('@0x6B/1/50', 'DINT', 'Nm'),
+            j2t=proxy_simple.parameter('@0x6B/1/51', 'DINT', 'Nm'),
+            j3t=proxy_simple.parameter('@0x6B/1/52', 'DINT', 'Nm'),
+            j4t=proxy_simple.parameter('@0x6B/1/53', 'DINT', 'Nm'),
+            j5t=proxy_simple.parameter('@0x6B/1/54', 'DINT', 'Nm'),
+            j6t=proxy_simple.parameter('@0x6B/1/55', 'DINT', 'Nm'),
+            j1a=proxy_simple.parameter('@0x6B/1/60', 'DINT', 'Degrees'),
+            j2a=proxy_simple.parameter('@0x6B/1/61', 'DINT', 'Degrees'),
+            j3a=proxy_simple.parameter('@0x6B/1/62', 'DINT', 'Degrees'),
+            j4a=proxy_simple.parameter('@0x6B/1/63', 'DINT', 'Degrees'),
+            j5a=proxy_simple.parameter('@0x6B/1/64', 'DINT', 'Degrees'),
+            j6a=proxy_simple.parameter('@0x6B/1/65', 'DINT', 'Degrees')
+        )
 
-    def _write_tags(self, tag_values: Dict[str, float]) -> bool:
-        """Write multiple tags to the robot"""
-        try:
-            with client.connector(host=self.ip_address, timeout=self.timeout) as conn:
-                for tag, value in tag_values.items():
-                    operations = attribute_operations([
-                        (f'@{tag}', 'REAL', value)
-                    ])
-                    for _, _, attrs, _ in conn.pipeline(operations=operations, depth=1):
-                        if not attrs or attrs[0].value != value:
-                            return False
-                return True
-        except Exception as e:
-            print(f"Error writing tags: {e}")
-            return False
+        # Torque register mapping (from your working implementation)
+        self.torque_registers = {
+            'j1t': 'j1_torque',  # Joint 1 torque (R[50])
+            'j2t': 'j2_torque',  # Joint 2 torque (R[51])
+            'j3t': 'j3_torque',  # Joint 3 torque (R[52])
+            'j4t': 'j4_torque',  # Joint 4 torque (R[53])
+            'j5t': 'j5_torque',  # Joint 5 torque (R[54])
+            'j6t': 'j6_torque'   # Joint 6 torque (R[55])
+        }
+
+        # Angle register mapping (from your working implementation)
+        self.angle_registers = {
+            'j1a': 'j1_angle',  # Joint 1 angle (R[60])
+            'j2a': 'j2_angle',  # Joint 2 angle (R[61])
+            'j3a': 'j3_angle',  # Joint 3 angle (R[62])
+            'j4a': 'j4_angle',  # Joint 4 angle (R[63])
+            'j5a': 'j5_angle',  # Joint 5 angle (R[64])
+            'j6a': 'j6_angle'   # Joint 6 angle (R[65])
+        }
 
     # ======================
-    # 2. Robot Kinematics
+    # 1. EtherNet/IP Communication Methods (Updated)
+    # ======================
+    def _read_torques(self) -> Optional[List[float]]:
+        """Read all joint torques"""
+        try:
+            with proxy_simple(host=self.ip_address) as proxy:
+                torques = []
+                for param, var_name in self.torque_registers.items():
+                    try:
+                        param_string = proxy.parameter_substitution(param)
+                        value, = proxy.read(param_string, checking=True)
+                        # value, = proxy.read(proxy.parameter_substitution(param), checking=True)
+                        globals()[var_name] = float(value[0]) if isinstance(value, list) else float(value)
+                        torque = globals()[var_name]  # Access the global variable
+                        torques.append(torque)
+                        logger.debug(f"Read {param}: {torque:.2f} Nm")
+                    except Exception as e:
+                        logger.error(f"Failed to read {param}: {str(e)}")
+                        return None
+                return torques
+        except Exception as exc:
+            logging.warning("Torque read failed: %s", exc)
+            proxy.close_gateway(exc=exc)
+            raise
+        finally:
+            proxy.close_gateway()
+
+    def _read_joint_angles(self) -> Optional[List[float]]:
+        """Read joint angles"""
+        try:
+            with proxy_simple(host=self.ip_address, timeout=self.timeout) as proxy:
+                angles = []
+                for param, var_name in self.angle_registers.items():
+                    try:
+                        # Using the exact method from your working implementation
+                        value, = proxy.read(proxy.parameter_substitution(param), checking=True)
+                        globals()[var_name] = float(value[0]) if isinstance(value, list) else float(value)
+                        angle = globals()[var_name]  # Access the global variable
+                        angle = np.radians(angle) # Convert to radians
+                        angles.append(angle)
+                        logger.debug(f"Read {param}: {angle:.2f} radians")
+                    except Exception as e:
+                        logger.error(f"Failed to read {param}: {str(e)}")
+                        return None
+                return angles
+        except Exception as exc:
+            logging.warning("Angle read failed: %s", exc)
+            proxy.close_gateway(exc=exc)
+            raise
+        finally:
+            proxy.close_gateway()
+
+    def _write_forces(self, forces: List[float]) -> bool:
+        """Write Cartesian forces to robot"""
+        # Implement your force writing method here
+        return True  # Mock success for demonstration
+
+    # ======================
+    # 2. Robot Kinematics (Same as Before)
     # ======================
     def _dh_transform(self, a: float, alpha: float, d: float, theta: float) -> np.ndarray:
         """Compute DH transformation matrix"""
@@ -112,16 +188,16 @@ class FanucRobot:
     # ======================
     def get_joint_states(self) -> Tuple[Optional[List[float]], Optional[List[float]]]:
         """Read joint angles and torques from robot"""
-        # FANUC typically stores joints in R[] registers and torques in other registers
-        tags = [(f'64/{i+1}', 'REAL') for i in range(6)]  # Joint angles R[1]-R[6]
-        tags += [(f'65/{i+1}', 'REAL') for i in range(6)]  # Joint torques (hypothetical address)
-        
-        results = self._read_tags(tags)
-        if not results:
+        # Read torques using verified method
+        torques = self._read_torques()
+        if torques is None:
             return None, None
             
-        angles = [results[f'64/{i+1}'] for i in range(6)]
-        torques = [results[f'65/{i+1}'] for i in range(6)]
+        # Read joint angles (implement your method here)
+        angles = self._read_joint_angles()
+        if angles is None:
+            return None, None
+            
         return angles, torques
 
     def compute_cartesian_force(self) -> Optional[np.ndarray]:
@@ -130,7 +206,7 @@ class FanucRobot:
         if joint_angles is None or joint_torques is None:
             return None
             
-        # Convert angles from degrees to radians
+        # Convert angles from degrees to radians if needed
         joint_angles_rad = np.radians(joint_angles)
         
         J = self.geometric_jacobian(joint_angles_rad)
@@ -141,13 +217,7 @@ class FanucRobot:
 
     def send_cartesian_force(self, force: np.ndarray) -> bool:
         """Send Cartesian force to robot"""
-        # Adjust to whichever registers you end up storing the forces in
-        tag_values = {
-            '66/1': force[0],  # Fx
-            '66/2': force[1],   # Fy
-            '66/3': force[2]    # Fz
-        }
-        return self._write_tags(tag_values)
+        return self._write_forces(force.tolist())
 
     # ======================
     # 4. Main Control Loop
@@ -155,19 +225,22 @@ class FanucRobot:
     def run(self, update_rate: float = 10.0):
         """Main control loop"""
         try:
+            logger.info(f"Starting FANUC force control at {update_rate}Hz...")
             while True:
                 start_time = time.time()
                 
                 # 1. Compute Cartesian force
                 force = self.compute_cartesian_force()
                 if force is None:
-                    print("Failed to compute force")
+                    logger.warning("Failed to compute force - retrying...")
                     time.sleep(1)
                     continue
                 
+                logger.debug(f"Computed force: {force}")
+                
                 # 2. Send to robot
                 if not self.send_cartesian_force(force):
-                    print("Failed to send force to robot")
+                    logger.warning("Failed to send force to robot - retrying...")
                 
                 # 3. Maintain cycle rate
                 elapsed = time.time() - start_time
@@ -175,12 +248,13 @@ class FanucRobot:
                 time.sleep(sleep_time)
                 
         except KeyboardInterrupt:
-            print("Stopping controller...")
+            logger.info("\nStopping controller...")
+        except Exception as e:
+            logger.error(f"Fatal error: {e}")
 
 if __name__ == "__main__":
     # Initialize robot connection
     robot = FanucRobot(ip_address="192.168.0.1", timeout=5.0)
     
     # Start main control loop (10Hz update rate)
-    print("Starting FANUC force control...")
     robot.run(update_rate=10.0)

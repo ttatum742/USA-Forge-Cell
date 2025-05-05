@@ -47,7 +47,7 @@ try:
             
             # Store value in the corresponding variable
             globals()[var_name] = float(value[0]) if isinstance(value, list) else float(value)
-            
+               
             # print(f"{param}: {globals()[var_name]:.2f} Nm")
             
             # Small delay between reads
@@ -66,7 +66,7 @@ try:
     print(f"Joint 5: {j5_torque:.2f} Nm")
     print(f"Joint 6: {j6_torque:.2f} Nm")
             
-except Exception as e:
+except Exception as exc:
     logging.warning("Main communication failed: %s", exc)
     via.close_gateway(exc=exc)
     raise
