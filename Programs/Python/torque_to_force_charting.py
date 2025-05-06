@@ -7,6 +7,7 @@ from typing import Tuple, List, Optional
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.lines import Line2D
+import threading
 from threading import Thread
 import queue
 
@@ -19,7 +20,9 @@ class RealTimePlotter:
         self.max_points = max_points
         self.data_queue = queue.Queue()
         self.fig, (self.ax1, self.ax2) = plt.subplots(2, 1, figsize=(10, 8))
-        
+        self.running = False
+        self.lock = threading.Lock()
+
         # Configure torque plot
         self.ax1.set_title('Joint Torques (Nm)')
         self.ax1.set_ylim(-1000, 1000)  # Adjust based on your expected range
@@ -54,49 +57,135 @@ class RealTimePlotter:
         
         # Start animation
         self.ani = animation.FuncAnimation(
-            self.fig, self._update_plot, interval=50, blit=True, save_count=50, cache_frame_data=False)
+            self.fig, self._update_plot, interval=50, blit=True, cache_frame_data=False)
         
     def _update_plot(self, frame):
-        """Update the plot with new data from queue"""
+        """Process all available data in queue and update plots"""
+        qsize = self.data_queue.qsize()
+        if qsize > 10:  # Only warn if significant backlog
+            print(f"Queue backlog: {qsize} items waiting")
         while not self.data_queue.empty():
-            data = self.data_queue.get()
-            timestamp, torques, forces = data
-            
-            # Update time data
-            self.time_data.append(timestamp)
-            if len(self.time_data) > self.max_points:
-                self.time_data.pop(0)
-            
-            # Update torque data
-            for i in range(6):
-                self.torque_data[i].append(torques[i])
-                if len(self.torque_data[i]) > self.max_points:
-                    self.torque_data[i].pop(0)
-                self.torque_lines[i].set_data(self.time_data, self.torque_data[i])
-            
-            # Update force data
-            for i in range(3):
-                self.force_data[i].append(forces[i])
-                if len(self.force_data[i]) > self.max_points:
-                    self.force_data[i].pop(0)
-                self.force_lines[i].set_data(self.time_data, self.force_data[i])
+            try:
+                timestamp, torques, forces = self.data_queue.get_nowait()
+                
+                # Update time data
+                self.time_data.append(timestamp)
+                if len(self.time_data) > self.max_points:
+                    self.time_data.pop(0)
+                
+                # Update torque data
+                for i in range(6):
+                    self.torque_data[i].append(torques[i])
+                    if len(self.torque_data[i]) > self.max_points:
+                        self.torque_data[i].pop(0)
+                    self.torque_lines[i].set_data(self.time_data, self.torque_data[i])
+                
+                # Update force data
+                for i in range(3):
+                    self.force_data[i].append(forces[i])
+                    if len(self.force_data[i]) > self.max_points:
+                        self.force_data[i].pop(0)
+                    self.force_lines[i].set_data(self.time_data, self.force_data[i])
+                
+                # Adjust axes
+                if self.time_data:
+                    self.ax1.set_xlim(self.time_data[0], self.time_data[-1])
+                    self.ax2.set_xlim(self.time_data[0], self.time_data[-1])
+                
+            except queue.Empty:
+                break
         
-        # Adjust axes limits
-        if self.time_data:
-            self.ax1.set_xlim(self.time_data[0], self.time_data[-1])
-            self.ax2.set_xlim(self.time_data[0], self.time_data[-1])
-        
+        # Return all artists that need redrawing
         return self.torque_lines + self.force_lines
-    
-    def add_data(self, timestamp, torques, forces):
-        """Add new data to the plot queue"""
-        self.data_queue.put((timestamp, torques, forces))
-    
-    def show(self):
-        """Show the plot window"""
-        plt.tight_layout()
-        plt.show()
 
+    def add_data(self, timestamp, torques, forces):
+        """Thread-safe data addition"""
+        # Ensure data is in correct format
+        if len(torques) == 6 and len(forces) == 3:
+            self.data_queue.put((timestamp, list(torques), list(forces)))
+        else:
+            print(f"Invalid data format. Expected 6 torques and 3 forces, got {len(torques)} torques and {len(forces)} forces")
+
+    def _is_running(self):
+        """Thread-safe running check."""
+        with self.lock:
+            return self.running
+        
+    def show(self):
+        """Show and maintain the plot window"""
+        plt.tight_layout()
+        with self.lock:
+            self.running = True
+        
+        # First draw before entering loop
+        self.fig.canvas.draw()
+        plt.show(block=False)
+        
+        try:
+            while self._is_running():
+                # Force redraw and process GUI events
+                self.fig.canvas.flush_events()
+                plt.pause(0.05)
+        except KeyboardInterrupt:
+            self.stop()
+
+    def start_background_update(self, robot, update_rate=10.0):
+        """Start a background thread that reads real data from the robot."""
+        self.running = True
+        self.update_thread = Thread(
+            target=self._update_real_data_loop,
+            args=(robot, update_rate),
+            daemon=True
+        )
+        self.update_thread.start()
+
+    def _update_real_data_loop(self, robot, update_rate):
+        """Thread-safe data collection with proper NumPy handling"""
+        while self._is_running():
+            try:
+                start_time = time.time()
+                
+                # 1. Get real data with proper None checks
+                torques = robot._read_torques()
+                torques = np.asarray(torques, dtype=np.float64)
+                torques = robot.filter_torque(torques)  # Uncomment for pre-processing filter
+                forces = robot.compute_cartesian_force()
+                forces = np.asarray(forces, dtype=np.float64)
+
+                # Proper NumPy array existence check
+                if torques is None or isinstance(torques, (list, np.ndarray)) and len(torques) == 0:
+                    print("Warning: No torque data received")
+                    torques = np.zeros(6)
+                
+                if forces is None or isinstance(forces, (list, np.ndarray)) and len(forces) == 0:
+                    print("Warning: No force data received")
+                    forces = np.zeros(3)
+                
+                # 3. Apply filtering post-processing
+                filtered_forces = robot.filter_force(forces)
+                filtered_forces = forces  # Uncomment for no filtering output data
+
+                # 4. Add to plot
+                self.add_data(
+                    timestamp=time.time(),
+                    torques=torques.tolist(),  # Convert to list for queue
+                    forces=filtered_forces.tolist()
+                )
+                
+                # 5. Maintain update rate
+                elapsed = time.time() - start_time
+                time.sleep(max(0, (1.0/update_rate) - elapsed))
+                
+            except Exception as e:
+                print(f"Data error: {str(e)}")
+                time.sleep(1)  # Prevent tight error loop
+
+    def stop(self):
+        """Stop the background thread"""
+        self.running = False
+        if hasattr(self, 'update_thread'):
+            self.update_thread.join()
+        plt.close()
 
 
 class FanucRobot(proxy_simple):
@@ -122,9 +211,9 @@ class FanucRobot(proxy_simple):
         super().__init__(host=ip_address)
         self.ip_address = ip_address
                 # Low-pass filter coefficients
-        self.alpha = 0.01  # Smoothing factor (0 < alpha < 1)
+        self.alpha = 0.9  # Smoothing factor (0 < alpha < 1)
         self.filtered_force = np.zeros(3)
-        
+        self.filtered_torque = np.zeros(6)
 ####### FANUC M-10iD/16S DH Parameters (in meters)
         self.dh_params = [
                         [0.150, -np.pi/2, 0.630, 0],  # Joint 1
@@ -134,7 +223,6 @@ class FanucRobot(proxy_simple):
                         [0,     -np.pi/2, 0,     0],  # Joint 5
                         [0,      0,       0.175, 0]   # Joint 6
                         ]
-
 
     def _read_parameter(self, param_name: str) -> Optional[float]:
         """Read a single parameter value with proper error handling"""
@@ -272,56 +360,33 @@ class FanucRobot(proxy_simple):
         self.filtered_force = self.alpha * force + (1 - self.alpha) * self.filtered_force
         return self.filtered_force
     
+    def filter_torque(self, force: np.ndarray) -> np.ndarray:
+        """Apply low-pass filter to the force vector"""
+        self.filtered_torque = self.alpha * force + (1 - self.alpha) * self.filtered_torque
+        return self.filtered_torque
+    # ======================
+    # Main Control Loop
+    # ======================
     def run(self, update_rate: float = 10.0):
-        """Main control loop with real-time plotting"""
+        """Main control loop with plotting"""
         try:
-            # Initialize plotter
+            print("Starting real-time monitoring...")
             plotter = RealTimePlotter()
-            #plot_thread = Thread(target=plotter.show, daemon=True)
-            #plot_thread.start()
-            
-            logger.info(f"Starting FANUC force control at {update_rate}Hz...")
-            while True:
-                start_time = time.time()
-                
-                # 1. Read current state
-                joint_angles = self._read_joint_angles()
-                joint_torques = self._read_torques()
-                
-                if joint_angles is None or joint_torques is None:
-                    logger.warning("Failed to read state - retrying...")
-                    time.sleep(1)
-                    continue
-                
-                # 2. Compute Cartesian force
-                force = self.compute_cartesian_force()
-                if force is None:
-                    logger.warning("Failed to compute force - retrying...")
-                    time.sleep(1)
-                    continue
-                
-                # 3. Apply low-pass filter
-                filtered_force = self.filter_force(force)
-                
-                # 4. Update plot
-                plotter.add_data(
-                    timestamp=time.time(),
-                    torques=joint_torques,
-                    forces=filtered_force
-                )
-                
-                # 5. Send to robot (if still needed)
-                if not self._write_forces(filtered_force):
-                    logger.warning("Failed to send force to robot - retrying...")
-                
-                # 6. Maintain cycle rate
-                elapsed = time.time() - start_time
-                sleep_time = max(0, (1.0/update_rate) - elapsed)
-                time.sleep(sleep_time)
-        except KeyboardInterrupt:
-            logger.info("\nStopping controller...")
+
+            # Test mode - uncomment to verify plotting works
+            #plotter.start_background_update(None, update_rate)  # Uses test data
+
+            # Production mode - comment above and uncomment below:
+            plotter.start_background_update(self, update_rate)  # Uses real robot data
+
+            print("Data collection active - opening plot window...")
+            plotter.show()  # This blocks until window closes
+
         except Exception as e:
-            logger.error(f"Fatal error: {e}")
+            print(f"Error: {str(e)}")
+        finally:
+            plotter.stop()
+            print("Stopped all threads")
 
 
 if __name__ == "__main__":
