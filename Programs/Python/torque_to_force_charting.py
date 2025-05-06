@@ -3,19 +3,26 @@ import numpy as np
 import time
 import logging
 from typing import Tuple, List, Optional
-
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.lines import Line2D
 import threading
 from threading import Thread
 import queue
+from scipy.signal import butter, filtfilt
 
 # Configure logging
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 class RealTimePlotter:
+    """Real-time plotter for torque and force data + future data logger??"""
+    ## In this program, we are using a queue to store the data and a separate thread to process it.
+    ## This allows us to decouple the data acquisition from the plotting, which can help with performance.
+    ## The data is processed in batches, which can help reduce the overhead of updating the plot too frequently.
+
+    ## KEEP ALL DATA PROCESSING IN THE ROBOT CLASS, THIS PROGRAM IS FOR DEBUGGING AND VISUALIZATION ONLY
+
     def __init__(self, max_points=1000):
         self.max_points = max_points
         self.data_queue = queue.Queue()
@@ -139,18 +146,24 @@ class RealTimePlotter:
         )
         self.update_thread.start()
 
-    def _update_real_data_loop(self, robot, update_rate):
-        """Thread-safe data collection with proper NumPy handling"""
+    def _update_real_data_loop(self, robot, update_rate):           # CHARTING DATA PROCESSING HERE
+        """Thread-safe data collection"""
+        # init filter params
+        robot._configure_butter(update_rate)  # Initialize Butterworth filter parameters
+
         while self._is_running():
             try:
                 start_time = time.time()
                 
-                # 1. Get real data with proper None checks
+                # 1. Get data, filter if needed
+
                 torques = robot._read_torques()
                 torques = np.asarray(torques, dtype=np.float64)
-                torques = robot.filter_torque(torques)  # Uncomment for pre-processing filter
-                forces = robot.compute_cartesian_force()
+                torques = robot.filter_torque_butter(torques)  # Uncomment for pre-processing filter
+
+                forces = robot.compute_cartesian_force() # NEED TO MAKE SURE WE ARE USING FILTERED TORQUES HERE!!!!!!!!!!!!
                 forces = np.asarray(forces, dtype=np.float64)
+
 
                 # Proper NumPy array existence check
                 if torques is None or isinstance(torques, (list, np.ndarray)) and len(torques) == 0:
@@ -162,7 +175,7 @@ class RealTimePlotter:
                     forces = np.zeros(3)
                 
                 # 3. Apply filtering post-processing
-                filtered_forces = robot.filter_force(forces)
+                #filtered_forces = robot.filter_force(forces)
                 filtered_forces = forces  # Uncomment for no filtering output data
 
                 # 4. Add to plot
@@ -189,6 +202,11 @@ class RealTimePlotter:
 
 
 class FanucRobot(proxy_simple):
+    """Fanuc Robot class for communication & torque-to-force conversion"""
+    ## Inherits from proxy_simple for communication with the robot controller
+    ## and implements methods for torque-to-force conversion using the robot's kinematics.
+
+                # Define parameters to read/write from robot
     PARAMETERS = dict(proxy_simple.PARAMETERS,
         j1t=proxy_simple.parameter('@0x6B/1/50', 'DINT', 'Nm'),
         j2t=proxy_simple.parameter('@0x6B/1/51', 'DINT', 'Nm'),
@@ -208,13 +226,26 @@ class FanucRobot(proxy_simple):
     )
 
     def __init__(self, ip_address: str):
+        """Initialize robot connection and params"""
+                # Init eth/ip connection
         super().__init__(host=ip_address)
         self.ip_address = ip_address
+
                 # Low-pass filter coefficients
         self.alpha = 0.9  # Smoothing factor (0 < alpha < 1)
         self.filtered_force = np.zeros(3)
         self.filtered_torque = np.zeros(6)
-####### FANUC M-10iD/16S DH Parameters (in meters)
+
+                # Butterworth filter coefficients
+        self.filter_order = 3
+        self.cutoff_freq = 5.0  # Hz (start with 1/2 of your update rate)
+        self.torque_filter_states = [{
+            'b': None,    # Initialize filter states for each joint
+            'a': None,
+            'prev_torques': np.zeros(6)
+        } for _ in range(6)]
+
+                # FANUC M-10iD/16S DH Parameters (in meters)
         self.dh_params = [
                         [0.150, -np.pi/2, 0.630, 0],  # Joint 1
                         [0.850,  0,       0,     0],  # Joint 2
@@ -294,6 +325,8 @@ class FanucRobot(proxy_simple):
             logger.error(f"Failed to write forces: {str(e)}", exc_info=True)
             return None
 
+
+
     # ======================
     # Kinematics and Control Methods
     # ======================
@@ -354,30 +387,55 @@ class FanucRobot(proxy_simple):
         F_base = np.linalg.pinv(J.T) @ joint_torques
         _, rotation = self.forward_kinematics(joint_angles)
         return rotation.T @ F_base[:3]
-    
-    def filter_force(self, force: np.ndarray) -> np.ndarray:
+
+    # ======================
+    # Data processing Methods
+    # ======================   
+    def filter_force_lp(self, force: np.ndarray) -> np.ndarray:
         """Apply low-pass filter to the force vector"""
         self.filtered_force = self.alpha * force + (1 - self.alpha) * self.filtered_force
         return self.filtered_force
     
-    def filter_torque(self, force: np.ndarray) -> np.ndarray:
-        """Apply low-pass filter to the force vector"""
+    def filter_torque_lp(self, force: np.ndarray) -> np.ndarray:            # MOVE CONFIG TO SEPARATE FUNCTION AND RUN ONCE INSTEAD OF EVERY TIME
+        """Apply low-pass filter to the incoming joint torques"""
         self.filtered_torque = self.alpha * force + (1 - self.alpha) * self.filtered_torque
         return self.filtered_torque
+
+    def _configure_butter(self, update_rate):
+        """Initialize Butterworth filters for each joint"""
+        self.b, self.a = butter(
+            N=self.filter_order,
+            Wn=self.cutoff_freq,
+            fs=update_rate,
+            btype='low'
+        )
+
+    def filter_torque_butter(self, raw_torques):
+        """Apply zero-phase filter to torques"""
+        from scipy.signal import filtfilt
+        filtered = np.zeros(6)
+        for i in range(6):
+            # Use current and previous value for continuity
+            filtered[i] = filtfilt(
+                self.b, self.a,
+                [self.prev_torques[i], raw_torques[i]]
+            )[-1]  # Take newest value
+        self.prev_torques = raw_torques
+        return filtered
+     
+
     # ======================
     # Main Control Loop
     # ======================
     def run(self, update_rate: float = 10.0):
-        """Main control loop with plotting"""
+        """Main control loop (plotting)"""
+        ## This program's main loop is drastically different from the original torque_to_force program.
+        ## The original program was designed to prioritize program write speed, while this program is for debugging and visualization.
         try:
             print("Starting real-time monitoring...")
             plotter = RealTimePlotter()
 
-            # Test mode - uncomment to verify plotting works
-            #plotter.start_background_update(None, update_rate)  # Uses test data
-
-            # Production mode - comment above and uncomment below:
-            plotter.start_background_update(self, update_rate)  # Uses real robot data
+            plotter.start_background_update(self, update_rate)
 
             print("Data collection active - opening plot window...")
             plotter.show()  # This blocks until window closes
