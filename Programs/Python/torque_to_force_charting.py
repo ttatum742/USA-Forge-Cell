@@ -4,9 +4,100 @@ import time
 import logging
 from typing import Tuple, List, Optional
 
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib.lines import Line2D
+from threading import Thread
+import queue
+
 # Configure logging
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
+
+class RealTimePlotter:
+    def __init__(self, max_points=1000):
+        self.max_points = max_points
+        self.data_queue = queue.Queue()
+        self.fig, (self.ax1, self.ax2) = plt.subplots(2, 1, figsize=(10, 8))
+        
+        # Configure torque plot
+        self.ax1.set_title('Joint Torques (Nm)')
+        self.ax1.set_ylim(-1000, 1000)  # Adjust based on your expected range
+        self.torque_lines = [
+            Line2D([], [], color='r', label='J1'),
+            Line2D([], [], color='g', label='J2'),
+            Line2D([], [], color='b', label='J3'),
+            Line2D([], [], color='c', label='J4'),
+            Line2D([], [], color='m', label='J5'),
+            Line2D([], [], color='y', label='J6')
+        ]
+        for line in self.torque_lines:
+            self.ax1.add_line(line)
+        self.ax1.legend(loc='upper right')
+        
+        # Configure force plot
+        self.ax2.set_title('Cartesian Forces (N)')
+        self.ax2.set_ylim(-2000, 2000)  # Adjust based on your expected range
+        self.force_lines = [
+            Line2D([], [], color='r', label='Fx'),
+            Line2D([], [], color='g', label='Fy'),
+            Line2D([], [], color='b', label='Fz')
+        ]
+        for line in self.force_lines:
+            self.ax2.add_line(line)
+        self.ax2.legend(loc='upper right')
+        
+        # Data storage
+        self.time_data = []
+        self.torque_data = [[] for _ in range(6)]
+        self.force_data = [[] for _ in range(3)]
+        
+        # Start animation
+        self.ani = animation.FuncAnimation(
+            self.fig, self._update_plot, interval=50, blit=True, save_count=50, cache_frame_data=False)
+        
+    def _update_plot(self, frame):
+        """Update the plot with new data from queue"""
+        while not self.data_queue.empty():
+            data = self.data_queue.get()
+            timestamp, torques, forces = data
+            
+            # Update time data
+            self.time_data.append(timestamp)
+            if len(self.time_data) > self.max_points:
+                self.time_data.pop(0)
+            
+            # Update torque data
+            for i in range(6):
+                self.torque_data[i].append(torques[i])
+                if len(self.torque_data[i]) > self.max_points:
+                    self.torque_data[i].pop(0)
+                self.torque_lines[i].set_data(self.time_data, self.torque_data[i])
+            
+            # Update force data
+            for i in range(3):
+                self.force_data[i].append(forces[i])
+                if len(self.force_data[i]) > self.max_points:
+                    self.force_data[i].pop(0)
+                self.force_lines[i].set_data(self.time_data, self.force_data[i])
+        
+        # Adjust axes limits
+        if self.time_data:
+            self.ax1.set_xlim(self.time_data[0], self.time_data[-1])
+            self.ax2.set_xlim(self.time_data[0], self.time_data[-1])
+        
+        return self.torque_lines + self.force_lines
+    
+    def add_data(self, timestamp, torques, forces):
+        """Add new data to the plot queue"""
+        self.data_queue.put((timestamp, torques, forces))
+    
+    def show(self):
+        """Show the plot window"""
+        plt.tight_layout()
+        plt.show()
+
+
 
 class FanucRobot(proxy_simple):
     PARAMETERS = dict(proxy_simple.PARAMETERS,
@@ -181,35 +272,52 @@ class FanucRobot(proxy_simple):
         self.filtered_force = self.alpha * force + (1 - self.alpha) * self.filtered_force
         return self.filtered_force
     
-###### MAIN LOOP ######
     def run(self, update_rate: float = 10.0):
-        """Main control loop"""
+        """Main control loop with real-time plotting"""
         try:
+            # Initialize plotter
+            plotter = RealTimePlotter()
+            #plot_thread = Thread(target=plotter.show, daemon=True)
+            #plot_thread.start()
+            
             logger.info(f"Starting FANUC force control at {update_rate}Hz...")
             while True:
                 start_time = time.time()
                 
-                # 1. Compute Cartesian force
+                # 1. Read current state
+                joint_angles = self._read_joint_angles()
+                joint_torques = self._read_torques()
+                
+                if joint_angles is None or joint_torques is None:
+                    logger.warning("Failed to read state - retrying...")
+                    time.sleep(1)
+                    continue
+                
+                # 2. Compute Cartesian force
                 force = self.compute_cartesian_force()
                 if force is None:
                     logger.warning("Failed to compute force - retrying...")
                     time.sleep(1)
                     continue
                 
-                logger.debug(f"Computed force: {force}")
-                
-                # 2. Apply low-pass filter
+                # 3. Apply low-pass filter
                 filtered_force = self.filter_force(force)
-                logger.debug(f"Filtered force: {filtered_force}")
-                # 3. Send to robot
+                
+                # 4. Update plot
+                plotter.add_data(
+                    timestamp=time.time(),
+                    torques=joint_torques,
+                    forces=filtered_force
+                )
+                
+                # 5. Send to robot (if still needed)
                 if not self._write_forces(filtered_force):
                     logger.warning("Failed to send force to robot - retrying...")
                 
-                # 4. Maintain cycle rate
+                # 6. Maintain cycle rate
                 elapsed = time.time() - start_time
                 sleep_time = max(0, (1.0/update_rate) - elapsed)
                 time.sleep(sleep_time)
-                
         except KeyboardInterrupt:
             logger.info("\nStopping controller...")
         except Exception as e:
