@@ -9,7 +9,7 @@ from matplotlib.lines import Line2D
 import threading
 from threading import Thread
 import queue
-from scipy.signal import butter, filtfilt
+from scipy.signal import butter, lfilter, filtfilt
 
 # Configure logging
 logging.basicConfig(level=logging.ERROR)
@@ -23,16 +23,22 @@ class RealTimePlotter:
 
     ## KEEP ALL DATA PROCESSING IN THE ROBOT CLASS, THIS PROGRAM IS FOR DEBUGGING AND VISUALIZATION ONLY
 
-    def __init__(self, max_points=1000):
+    def __init__(self, max_points=500):
         self.max_points = max_points
         self.data_queue = queue.Queue()
-        self.fig, (self.ax1, self.ax2) = plt.subplots(2, 1, figsize=(10, 8))
+        self.fig, (self.ax1, self.ax2, self.ax3) = plt.subplots(3, 1, figsize=(10, 8))
         self.running = False
         self.lock = threading.Lock()
 
+        # Spike detection parameters
+        self.derivative_threshold = 10  # N/s (adjust based on your needs)
+        self.prev_forces = None
+        self.prev_time = None
+        self.derivative_data = [[] for _ in range(3)]  # Stores dF/dt values
+
         # Configure torque plot
         self.ax1.set_title('Joint Torques (Nm)')
-        self.ax1.set_ylim(-1000, 1000)  # Adjust based on your expected range
+        self.ax1.set_ylim(-40, 40)  # Adjust based on your expected range
         self.torque_lines = [
             Line2D([], [], color='r', label='J1'),
             Line2D([], [], color='g', label='J2'),
@@ -47,7 +53,7 @@ class RealTimePlotter:
         
         # Configure force plot
         self.ax2.set_title('Cartesian Forces (N)')
-        self.ax2.set_ylim(-2000, 2000)  # Adjust based on your expected range
+        self.ax2.set_ylim(-50, 50)  # Adjust based on your expected range
         self.force_lines = [
             Line2D([], [], color='r', label='Fx'),
             Line2D([], [], color='g', label='Fy'),
@@ -57,6 +63,21 @@ class RealTimePlotter:
             self.ax2.add_line(line)
         self.ax2.legend(loc='upper right')
         
+        # Configure spike detection plot (derivative of force)
+        self.ax3.set_title('Force Rate-of-Change (dF/dt)')
+        self.ax3.set_ylabel('N/s')
+        self.ax3.set_ylim(-30, 30)  # Adjust based on expected spike magnitudes
+        self.derivative_lines = [
+            Line2D([], [], color='r', label='dFx/dt'),
+            Line2D([], [], color='g', label='dFy/dt'),
+            Line2D([], [], color='b', label='dFz/dt')
+        ]
+        for line in self.derivative_lines:
+            self.ax3.add_line(line)
+        self.ax3.legend(loc='upper right')
+        self.ax3.axhline(y=self.derivative_threshold, color='r', linestyle='--', alpha=0.5)
+        self.ax3.axhline(y=-self.derivative_threshold, color='r', linestyle='--', alpha=0.5)
+
         # Data storage
         self.time_data = []
         self.torque_data = [[] for _ in range(6)]
@@ -67,44 +88,186 @@ class RealTimePlotter:
             self.fig, self._update_plot, interval=50, blit=True, cache_frame_data=False)
         
     def _update_plot(self, frame):
-        """Process all available data in queue and update plots"""
-        qsize = self.data_queue.qsize()
-        if qsize > 10:  # Only warn if significant backlog
-            print(f"Queue backlog: {qsize} items waiting")
+        """Process all available data in queue and update plots with real-time filtering"""
+        # Initialize filters if they don't exist
+        if not hasattr(self, 'force_filter_state'):
+
+            # High-pass filter for derivatives (1Hz cutoff, 1st order)
+            self.b_high, self.a_high = butter(1, 1, btype='highpass', fs=100)
+            # Proper state initialization
+            self.derivative_filter_state = [np.zeros(len(self.a_high)-1) for _ in range(3)]
+
+            # Additional filters for derivatives:
+            self.filter_order = 1  # 2nd order works well for derivatives
+            self.cutoff_freq = 0.15  # Hz (start low for derivatives)
+            self.mavg_window = 3  # Odd number of samples (3-5 at 1.16Hz)
+            self.mavg_buffer = [[] for _ in range(3)]  # One per axis
+
+            # Initialize multiple filter stages
+            self.b1, self.a1 = butter(self.filter_order, self.cutoff_freq, btype='lowpass', fs=1.16)
+            self.b2, self.a2 = butter(self.filter_order, self.cutoff_freq*1.5, btype='lowpass', fs=1.16)
+            self.filter_state = [np.zeros(max(len(self.a1),len(self.a2))-1) for _ in range(3)]
+
+        if not hasattr(self, 'prev_time'):
+            self.prev_forces = np.zeros(3)
+            self.prev_time = None
+            self.last_xlim = [0, 1]  # Initialize with default range
+
         while not self.data_queue.empty():
             try:
                 timestamp, torques, forces = self.data_queue.get_nowait()
-                
-                # Update time data
+
+                # Ensure time_data has at least 2 points for proper plotting
                 self.time_data.append(timestamp)
                 if len(self.time_data) > self.max_points:
                     self.time_data.pop(0)
-                
-                # Update torque data
+
+                # Update torque data (ensure matching lengths)
                 for i in range(6):
                     self.torque_data[i].append(torques[i])
                     if len(self.torque_data[i]) > self.max_points:
                         self.torque_data[i].pop(0)
+                    # Ensure arrays match in length
+                    self.torque_data[i] = self.torque_data[i][-len(self.time_data):]
                     self.torque_lines[i].set_data(self.time_data, self.torque_data[i])
-                
-                # Update force data
+
+                # Update force data (ensure matching lengths)
                 for i in range(3):
                     self.force_data[i].append(forces[i])
                     if len(self.force_data[i]) > self.max_points:
                         self.force_data[i].pop(0)
+                    # Ensure arrays match in length
+                    self.force_data[i] = self.force_data[i][-len(self.time_data):]
                     self.force_lines[i].set_data(self.time_data, self.force_data[i])
+
+                # 2. Calculate derivatives only when we have enough data
+                derivatives = np.zeros(3)
+                if self.prev_time is not None:  # Only calculate if we have previous time
+                    try:
+                        dt = timestamp - self.prev_time
+                        if dt > 1e-6:  # Minimum time threshold (1 microsecond)
+                            current_forces = np.array(forces, dtype=np.float64)
+                            derivatives = (current_forces - self.prev_forces) / dt
+
+                            # Debug output
+                            print(f"\nDERIVATIVE CALCULATION:")
+                            print(f"Time Delta: {dt:.6f} seconds")
+                            print(f"Current Forces: {current_forces}")
+                            print(f"Previous Forces: {self.prev_forces}")
+                            print(f"Resulting Derivatives: {derivatives}")
+                    except Exception as e:
+                        print(f"Derivative calculation error: {str(e)}")
+                        derivatives = np.zeros(3)
+
+                # 2. Update previous values IMMEDIATELY after calculation
+                self.prev_forces = np.array(forces, dtype=np.float64).copy()
+                self.prev_time = timestamp
+
+                # 3. Simplified filtering - temporarily bypass for debugging
+                # filtered_derivatives = derivatives  # Comment out this line to re-enable filtering
                 
-                # Adjust axes
-                if self.time_data:
-                    self.ax1.set_xlim(self.time_data[0], self.time_data[-1])
-                    self.ax2.set_xlim(self.time_data[0], self.time_data[-1])
+                ##### SINGLE STAGE FILTERING #####
+                """filtered_derivatives = np.zeros(3)
+                for i in range(3):
+                    if len(self.time_data) > 1:
+                        filtered, self.derivative_filter_state[i] = lfilter(
+                            self.b_high, self.a_high,
+                            [derivatives[i]],
+                            zi=self.derivative_filter_state[i]
+                        )
+                        filtered_derivatives[i] = filtered[0]
+                    else:
+                        filtered_derivatives[i] = 0 """
                 
+                
+                #### MULTI STAGE FILTERING 
+                filtered_derivatives = np.zeros(3)
+                for i in range(3):
+                    if len(self.time_data) > 1:
+
+                        # Stage 1: moving average
+                        self.mavg_buffer[i].append(derivatives[i])
+                        if len(self.mavg_buffer[i]) > self.mavg_window:
+                            self.mavg_buffer[i].pop(0)
+                        mavg_output = np.mean(self.mavg_buffer[i])
+                        #filtered_derivatives[i] = mavg_output
+
+                        # Stage 2: Initial lpf
+                        stage1, self.filter_state[i] = lfilter(
+                            self.b1, self.a1, 
+                            [mavg_output], 
+                            zi=self.filter_state[i]
+                        )
+
+                        # Stage 3: Secondary lpf
+                        filtered_derivatives[i], _ = lfilter(
+                            self.b2, self.a2,
+                            stage1,
+                            zi=np.zeros(len(self.a2)-1)
+                        )
+
+                    else:
+                        filtered_derivatives[i] = 0
+                    print(f"Filtered Derivative {i}: {filtered_derivatives[i]}")
+                
+                # 4. Update plots with verification
+                for i in range(3):
+                    if not np.isfinite(filtered_derivatives[i]):  # Safety check
+                        filtered_derivatives[i] = 0
+
+                    self.derivative_data[i].append(filtered_derivatives[i])
+                    self.derivative_data[i] = self.derivative_data[i][-self.max_points:]  # Trim excess
+
+                    # Verify data before plotting
+                    if len(self.time_data) == len(self.derivative_data[i]):
+                        self.derivative_lines[i].set_data(self.time_data, self.derivative_data[i])
+                    else:
+                        print(f"Data length mismatch in axis {i}")
+
+                # 5. Spike detection
+                valid_derivatives = filtered_derivatives[np.isfinite(filtered_derivatives)]
+                if len(valid_derivatives) == 3:
+                    for i, deriv in enumerate(filtered_derivatives):
+                        if abs(deriv) > self.derivative_threshold:
+                            self.ax3.plot(timestamp, deriv, 
+                                         'ro' if i==0 else 'go' if i==1 else 'bo',
+                                         markersize=8)
+
+                # Adjust axes only when we have sufficient data
+                if len(self.time_data) > 1:
+                    xmin, xmax = self.time_data[0], self.time_data[-1]
+                    if xmax - xmin > 0.001:  # Minimum time window to prevent singular transform
+                        self.ax1.set_xlim(xmin, xmax)
+                        self.ax2.set_xlim(xmin, xmax)
+                        self.ax3.set_xlim(xmin, xmax)
+                        self.last_xlim = [xmin, xmax]
+                    else:
+                        # Use previous good limits if current window is too small
+                        self.ax1.set_xlim(self.last_xlim[0], self.last_xlim[1])
+                        self.ax2.set_xlim(self.last_xlim[0], self.last_xlim[1])
+                        self.ax3.set_xlim(self.last_xlim[0], self.last_xlim[1])
+
             except queue.Empty:
                 break
-        
-        # Return all artists that need redrawing
-        return self.torque_lines + self.force_lines
+            
+        # Return artists only if we have data
+        if len(self.time_data) > 0:
+            return self.torque_lines + self.force_lines + self.derivative_lines
+        return []
 
+    def _calculate_derivative(self, current_forces, current_time):
+        """Compute instantaneous rate of change (dF/dt)"""
+        derivatives = [0, 0, 0]
+        
+        if self.prev_forces is not None and self.prev_time is not None:
+            dt = current_time - self.prev_time
+            if dt > 0:  # Prevent division by zero
+                derivatives = [(cf - pf)/dt for cf, pf in zip(current_forces, self.prev_forces)]
+        
+        self.prev_forces = current_forces
+        self.prev_time = current_time
+        return derivatives
+    
     def add_data(self, timestamp, torques, forces):
         """Thread-safe data addition"""
         # Ensure data is in correct format
@@ -146,52 +309,69 @@ class RealTimePlotter:
         )
         self.update_thread.start()
 
-    def _update_real_data_loop(self, robot, update_rate):           # CHARTING DATA PROCESSING HERE
-        """Thread-safe data collection"""
-        # init filter params
-        robot._configure_butter(update_rate)  # Initialize Butterworth filter parameters
+    def _update_real_data_loop(self, robot, update_rate):
+        """Thread-safe data collection with precise timing control"""
+        # Initialize filter params
+        robot._configure_butter(update_rate)
+
+        # Use high-resolution timer
+        last_time = time.perf_counter()
+        target_interval = 1.0 / update_rate
+        cycle_counter = 0  # For rate monitoring
 
         while self._is_running():
+            current_time = time.perf_counter()
+            dt = current_time - last_time
+            print(f"Actual Δt: {dt:.6f}s → Effective rate: {1/dt:.2f}Hz")
             try:
-                start_time = time.time()
-                
-                # 1. Get data, filter if needed
+                cycle_start = time.perf_counter()
 
-                torques = robot._read_torques()
-                torques = np.asarray(torques, dtype=np.float64)
-                torques = robot.filter_torque_butter(torques)  # Uncomment for pre-processing filter
+                # 1. Get and process data with proper array validation
+                raw_torques = robot._read_torques()
+                raw_forces = robot.compute_cartesian_force()
 
-                forces = robot.compute_cartesian_force() # NEED TO MAKE SURE WE ARE USING FILTERED TORQUES HERE!!!!!!!!!!!!
-                forces = np.asarray(forces, dtype=np.float64)
+                # Handle None or empty arrays
+                torques = np.zeros(6) if raw_torques is None else np.asarray(raw_torques, dtype=np.float64)
+                forces = np.zeros(3) if raw_forces is None else np.asarray(raw_forces, dtype=np.float64)
 
-
-                # Proper NumPy array existence check
-                if torques is None or isinstance(torques, (list, np.ndarray)) and len(torques) == 0:
-                    print("Warning: No torque data received")
+                # Validate array shapes
+                if torques.shape != (6,):
+                    print(f"Warning: Invalid torque shape {torques.shape}, using zeros")
                     torques = np.zeros(6)
-                
-                if forces is None or isinstance(forces, (list, np.ndarray)) and len(forces) == 0:
-                    print("Warning: No force data received")
+                if forces.shape != (3,):
+                    print(f"Warning: Invalid force shape {forces.shape}, using zeros")
                     forces = np.zeros(3)
-                
-                # 3. Apply filtering post-processing
-                #filtered_forces = robot.filter_force(forces)
-                filtered_forces = forces  # Uncomment for no filtering output data
 
-                # 4. Add to plot
+                torques = robot.filter_torque_butter(torques)
+                print(f"calculated forces: {forces}")
+
+                # 2. Add data with precise timestamp
                 self.add_data(
-                    timestamp=time.time(),
-                    torques=torques.tolist(),  # Convert to list for queue
-                    forces=filtered_forces.tolist()
+                    timestamp=cycle_start,
+                    torques=torques.tolist(),
+                    forces=forces.tolist()
                 )
-                
-                # 5. Maintain update rate
-                elapsed = time.time() - start_time
-                time.sleep(max(0, (1.0/update_rate) - elapsed))
-                
+
+                # 3. Strict rate control with adaptive sleep
+                cycle_time = time.perf_counter() - cycle_start
+                sleep_time = target_interval - cycle_time
+
+                if sleep_time > 0.002:  # Only sleep if significant time remains
+                    time.sleep(max(0, sleep_time * 0.9))  # Sleep 90% of remaining time
+                elif cycle_time > target_interval * 1.1:  # Only warn if >10% over
+                    print(f"Performance: Target {update_rate}Hz, actual {(1/cycle_time):.1f}Hz")
+
+                # Sample every 10 cycles to monitor rate
+                cycle_counter += 1
+                if cycle_counter % 10 == 0:
+                    actual_rate = 10 / (time.perf_counter() - last_time)
+                    print(f"Average rate: {actual_rate:.1f}Hz")
+                    last_time = time.perf_counter()
+
             except Exception as e:
                 print(f"Data error: {str(e)}")
-                time.sleep(1)  # Prevent tight error loop
+                time.sleep(min(1.0, target_interval))  # Prevent tight error loop
+
 
     def stop(self):
         """Stop the background thread"""
@@ -239,21 +419,36 @@ class FanucRobot(proxy_simple):
                 # Butterworth filter coefficients
         self.filter_order = 3
         self.cutoff_freq = 5.0  # Hz (start with 1/2 of your update rate)
+        self.prev_torques = np.zeros(6)  # init previous torques for filtering
         self.torque_filter_states = [{
             'b': None,    # Initialize filter states for each joint
             'a': None,
-            'prev_torques': np.zeros(6)
+            #'prev_torques': np.zeros(6)
         } for _ in range(6)]
 
-                # FANUC M-10iD/16S DH Parameters (in meters)
+                # Spike detection parameters
+       # self.derivative_threshold = 100  # N/s (adjust based on your needs)
+       # self.prev_forces = None
+       # self.prev_time = None
+       # self.derivative_data = [[] for _ in range(3)]  # Stores dF/dt values
+
+                # Angle filtering parameters
+        self.angle_window_size = 3  # Adjust based on update rate
+        self.angle_history = [[] for _ in range(6)]  # Store last N angles per joint
+
+                # FANUC M-10iD/16S DH Parameters (in meters, radians)
         self.dh_params = [
-                        [0.150, -np.pi/2, 0.630, 0],  # Joint 1
-                        [0.850,  0,       0,     0],  # Joint 2
-                        [0.145, -np.pi/2, 0,     0],  # Joint 3
-                        [0,      np.pi/2, 0.800, 0],  # Joint 4
-                        [0,     -np.pi/2, 0,     0],  # Joint 5
-                        [0,      0,       0.175, 0]   # Joint 6
+                        [0.075,  -1.571,0,      0],  # Joint 1
+                        [0.440,  0,     0,      0],  # Joint 2
+                        [0.195, -1.571, 0,      0],  # Joint 3
+                        [0,      1.571, 0.555, 0],  # Joint 4
+                        [0,     -1.571, 0,      0],  # Joint 5
+                        [0,      0,     0.090, 0]   # Joint 6
                         ]
+        self.torque_window = []  # For moving average of torques
+        self.filtered_angles = np.zeros(6)  # For exponential smoothing
+        self.angle_alpha = 0.2  # Smoothing factor (0.1-0.3 recommended)
+
 
     def _read_parameter(self, param_name: str) -> Optional[float]:
         """Read a single parameter value with proper error handling"""
@@ -375,16 +570,18 @@ class FanucRobot(proxy_simple):
             J[3:, i] = z_i
         return J
 
-    def compute_cartesian_force(self) -> Optional[np.ndarray]:
+    def compute_cartesian_force(self) -> Optional[np.ndarray]: # NEED TO MOVE DATA PROCESSING HERE
         """Compute Cartesian force in tool frame"""
-        joint_angles = self._read_joint_angles()
-        joint_torques = self._read_torques()
-        
-        if joint_angles is None or joint_torques is None:
+        raw_angles = self._read_joint_angles()
+        raw_torques = self._read_torques()
+        ma_torques = self.filter_torque_mavg(raw_torques)  # Filtered torques for calculation
+        filt_torques = self.filter_torque_butter(ma_torques)
+        joint_angles = self.filter_angles(raw_angles)  # Filtered angles for calculation
+        if joint_angles is None or filt_torques is None:
             return None
             
         J = self.geometric_jacobian(joint_angles)
-        F_base = np.linalg.pinv(J.T) @ joint_torques
+        F_base = np.linalg.pinv(J.T) @ filt_torques
         _, rotation = self.forward_kinematics(joint_angles)
         return rotation.T @ F_base[:3]
 
@@ -403,26 +600,90 @@ class FanucRobot(proxy_simple):
 
     def _configure_butter(self, update_rate):
         """Initialize Butterworth filters for each joint"""
+        self.filter_order = 2  # Keep this moderate
+        self.fs = update_rate  # Sampling rate (Hz)
+        
+        # Critical: cutoff must be < fs/2 (Nyquist frequency)
+        self.cutoff_freq = min(4.0, self.fs * 0.49)  # Never exceed 49% of fs/2
+        
         self.b, self.a = butter(
             N=self.filter_order,
             Wn=self.cutoff_freq,
-            fs=update_rate,
-            btype='low'
+            fs=self.fs,
+            btype='lowpass'
         )
+        print(f"Initialized {self.filter_order}-order Butterworth @ {self.cutoff_freq:.1f}Hz (fs={self.fs}Hz)")
 
     def filter_torque_butter(self, raw_torques):
-        """Apply zero-phase filter to torques"""
-        from scipy.signal import filtfilt
+        """Safe torque filtering with minimum data checks"""
+
+        if not hasattr(self, 'prev_torques'):
+            self.prev_torques = np.zeros(6)
+            return raw_torques  # Return first reading unfiltered
+
+        try:
+            filtered = np.zeros(6)
+            for i in range(6):
+                # Use simple IIR filter when data is scarce
+                if not hasattr(self, 'b') or len(self.prev_torques) < 3:
+                    # Simple exponential smoothing as fallback
+                    alpha = 0.25  # Smoothing factor
+                    filtered[i] = alpha * raw_torques[i] + (1-alpha) * self.prev_torques[i]
+                else:
+                    # Proper Butterworth when we have enough history
+                    filtered[i] = lfilter(
+                        self.b, self.a,
+                        [self.prev_torques[i], raw_torques[i]]
+                    )[-1]
+
+            self.prev_torques = filtered.copy()
+            return filtered
+
+        except Exception as e:
+            print(f"Filter fallback: {str(e)}")
+            return raw_torques  # Graceful degradation
+        
+    def filter_torque_mavg(self, raw_torques):
+        self.torque_window.append(raw_torques)
+        if len(self.torque_window) > 3:  # 2.6s window at 1.16Hz
+            self.torque_window.pop(0)
+        ma_torques = np.mean(self.torque_window, axis=0)
+        return ma_torques
+    
+    def _detect_spikes(self, forces):
+        """Identify sudden force spikes using simple difference method"""
+        spikes = [0, 0, 0]
+        
+        if len(self.force_history) > 0:
+            # Compare with last recorded force
+            last_forces = self.force_history[-1]
+            for i in range(3):
+                if abs(forces[i] - last_forces[i]) > self.spike_threshold:
+                    spikes[i] = 1  # Binary spike indicator
+        
+        # Maintain history size
+        self.force_history.append(forces)
+        if len(self.force_history) > self.history_size:
+            self.force_history.pop(0)
+            
+        return spikes
+
+
+    def filter_angles(self, raw_angles):
+        """Apply moving average to joint angles"""
+        if not hasattr(self, 'angle_history'):
+            self.angle_window_size = 5  # 4.3s window at 1.16Hz
+            self.angle_history = [[] for _ in range(6)]
+            self.filtered_angles = np.zeros(6)
         filtered = np.zeros(6)
         for i in range(6):
-            # Use current and previous value for continuity
-            filtered[i] = filtfilt(
-                self.b, self.a,
-                [self.prev_torques[i], raw_torques[i]]
-            )[-1]  # Take newest value
-        self.prev_torques = raw_torques
+            self.angle_history[i].append(raw_angles[i])
+            if len(self.angle_history[i]) > self.angle_window_size:
+                self.angle_history[i].pop(0)
+            med_angles = np.median(self.angle_history[i])
+            self.filtered_angles[i] = 0.2*med_angles +0.8*self.filtered_angles[i]  # Exponential smoothing
+            filtered[i] = self.filtered_angles[i]
         return filtered
-     
 
     # ======================
     # Main Control Loop
@@ -453,4 +714,4 @@ if __name__ == "__main__":
     
     
     # Start main control loop (10Hz update rate)
-    robot.run(update_rate=10.0)
+    robot.run(update_rate=7.0)
