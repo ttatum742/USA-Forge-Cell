@@ -123,7 +123,7 @@ class TorqueDerivativeCalculator(proxy_simple):
         self.prev_torques = filtered_torques  # Store filtered torques for next iteration
         return None
 
-    def run(self, update_rate: float = 100.0):
+    def run(self, update_rate: float = 500.0):
         """Main control loop for torque derivative calculation"""
         self.update_rate = update_rate
         logger.info(f"Starting torque derivative calculation at {update_rate}Hz...")
