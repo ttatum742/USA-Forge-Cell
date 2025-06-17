@@ -1,0 +1,38 @@
+/PROG  PICK_FURNACE
+/ATTR
+OWNER		= MNEDITOR;
+COMMENT		= "";
+PROG_SIZE	= 321;
+CREATE		= DATE 25-06-05  TIME 09:25:30;
+MODIFIED	= DATE 25-06-09  TIME 08:08:08;
+FILE_NAME	= ;
+VERSION		= 0;
+LINE_COUNT	= 10;
+MEMORY_SIZE	= 669;
+PROTECT		= READ_WRITE;
+TCD:  STACK_SIZE	= 0,
+      TASK_PRIORITY	= 50,
+      TIME_SLICE	= 0,
+      BUSY_LAMP_OFF	= 0,
+      ABORT_REQUEST	= 0,
+      PAUSE_REQUEST	= 0;
+DEFAULT_GROUP	= 1,*,*,*,*;
+CONTROL_CODE	= 00000000 00000000;
+LOCAL_REGISTERS	= 0,0,0;
+/APPL
+
+AUTO_SINGULARITY_HEADER;
+  ENABLE_SINGULARITY_AVOIDANCE   : TRUE;
+/MN
+   1:  CALL GRIPPER_OPEN    ;
+   2:L PR[2:furnace] 250mm/sec FINE    ;
+   3:  CALL GRIPPER_CLOSE    ;
+   4:L PR[2:furnace] 250mm/sec CNT100 Offset,PR[20:zoffset150]    ;
+   5:L PR[2:furnace] 500mm/sec CNT100 Tool_Offset,PR[21:approach offs] Offset,PR[20:zoffset150]    ;
+   6:   ;
+   7:   ;
+   8:   ;
+   9:   ;
+  10:   ;
+/POS
+/END

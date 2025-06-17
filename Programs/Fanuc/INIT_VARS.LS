@@ -1,11 +1,36 @@
 /PROG INIT_VARS
 /ATTR
 /MN
-: !TIMERS;
-: TIMER[1]=RESET;
-: TIMER[2]=RESET;
+: !##################;
+: !####  TIMERS  ####;
+: !##################;
+: TIMER[1]=RESET    ;
+: TIMER[2]=RESET    ;
+: TIMER[3]=RESET    ;
 :;
-: !LOGGING;
+: !###################;
+: !###  REGISTERS  ###;
+: !###################;
+:;
+:   !CONSTANTS;
+: R[18:approach_adj]=38.1  ;
+: R[9:horiz_spacing]=45 ;
+: R[10:vert_spacing]=127  ;
+: R[20:critical_dia]=30.67  ;
+: R[11:fixturelen_raw]=304.8  ;
+: R[19:jig_height]=3.175  ;
+:   !COUNTS;
+: R[5:PARTS_REMAINING]=R[4:RUNQTY]   ;
+:   !UNITS;
+: R[1:part_length]=(R[1:part_length]*25.4)  ;
+: R[2:rod_diameter]=(R[2:rod_diameter]*25.4)  ;
+: R[12:backstop_set]=(R[12:backstop_set]*25.4)  ;
+:   !CALCULATIONS;
+: R[13:fixtureLen_calc]=(R[11:fixturelen_raw]-R[12:backstop_set])  ;
+: R[14:part_protrude]=(R[1:part_length]-R[13:fixtureLen_calc])  ;
+: R[15:part_gripped]=(0.22*R[1:part_length]) ;
+: R[21:part_ungrip]=(R[1:part_length]-R[15:part_gripped])  ;
+:   !LOGGING;
 : R[190]=0;
 : R[191]=0;
 : R[192]=0;
@@ -18,12 +43,23 @@
 : R[199]=0;
 : R[200]=0;
 :;
-: !OFFSETS;
-: PR[50,3:pickoffset_tool]=R[1:part length];
 :;
-: !REGISTERS;
+: !###################;
+: !####  OFFSETS  ####;
+: !###################;
+: CALL CALC_OFFSETS  ;
+:   !APPROACH;
+: PR[22,2:approachOffs]=R[16:radial_offset]  ;
+: PR[22,3:approachOffs]=(R[14:part_protrude]+R[18:approach_adj]);
+:   !PICKING;
+: PR[24,2:pickoffset]=R[16:radial_offset]  ;
+: PR[24,3:pickoffset]=(R[14:part_protrude]-R[15:part_gripped])  ;
+: PR[25,3:rmvPart]=(R[21:part_ungrip]+R[14:part_protrude])  ;
+:   !PLACING;
 :;
-: !MISC;
+: !################;
+: !####  MISC  ####;
+: !################;
 :;
 /POS
 /END

@@ -1,5 +1,0 @@
-/PROG PICKPART
-/ATTR
-/MN
-/POS
-/END
