@@ -37,7 +37,7 @@ AUTO_SINGULARITY_HEADER;
 : !R[24] = Priority furnace (1 or 2, which is ready first);
 : !R[25] = Available furnace (1 or 2, which can accept part);
 :;
-: !Digital I/O mapping:;
+: !Digital I/O mapping (placeholders for now):;
 : !DI[2] = Part ready signal;
 : !DI[4] = Furnace 1 done signal;
 : !DI[5] = Furnace 2 done signal;

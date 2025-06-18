@@ -1,7 +1,7 @@
 /PROG CALC_POS
 /ATTR
 /MN
-:!All pick positions are relative to UF[1];
+:!All pick positions are relative to UF[3];
 :;
 :UFRAME_NUM=1   ;
 :!Load base position;
