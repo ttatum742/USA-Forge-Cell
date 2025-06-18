@@ -9,7 +9,7 @@ FILE_NAME = ;
 VERSION   = 0;
 LINE_COUNT  = 0;
 MEMORY_SIZE = 500;
-PROTECT   = read_WRITE;
+PROTECT   = READ_WRITE;
 TCD:  STACK_SIZE  = 0,
       TASK_PRIORITY = 50,
       TIME_SLICE  = 0,
@@ -32,11 +32,11 @@ AUTO_SINGULARITY_HEADER;
 : !R[4] = RunQty;
 :;
 : !New furnace status registers:;
+:!UPDATE THESE!!!!;
 : !R[10] = Furnace 1 state (0=empty, 1=loading, 2=heating, 3=ready);
 : !R[11] = Furnace 2 state (0=empty, 1=loading, 2=heating, 3=ready);
-: !R[12] = Current part row;
-: !R[13] = Current part col;
 : !R[14] = Priority furnace (1 or 2, which is ready first);
+: !R[15] = Available furnace (1 or 2, which can accept part);
 :;
 : !Digital I/O mapping:;
 : !DI[2] = Part ready signal;
@@ -51,12 +51,11 @@ AUTO_SINGULARITY_HEADER;
 : CALL SAFETY_CHECK ;
 : CALL HOME ;
 : CALL CONNECTION_TEST  ;
-: CALL INIT_FURNACES ;
 :;
 : !Main processing loop;
 : LBL[1]  ;
-: FOR R[12:rowCount]=1 TO 4  ;
-:   FOR R[13:colCount]=1 TO 8  ;
+: FOR R[6:rowCount]=1 TO 4  ;
+:   FOR R[7:colCount]=1 TO 16  ;
 :     !Check if any furnace is ready for pickup (priority);
 :     CALL CHECK_READY_FURNACE ;
 :     IF (R[14:PRIORITY_FURNACE]>0) THEN  ;
