@@ -30,6 +30,7 @@ AUTO_SINGULARITY_HEADER;
 : !R[2] = Rod diameter;
 : !R[3] = Head type;
 : !R[4] = RunQty;
+: !R[12] = backstop setting;
 :;
 : !furnace status registers:;
 : !R[22] = Furnace 1 state (0=empty, 1=loading, 2=heating, 3=ready);

@@ -1,0 +1,108 @@
+============ REGISTER MAPPING ============
+PLC Interface Registers (Written by PLC):
+R[1] = Part Length (converted to mm in INIT_VARS)
+R[2] = Rod diameter (converted to mm, used in CALC_POS)
+R[3] = Head type (not actively used)
+R[4] = RunQty (run quantity, initializes R[5])
+R[12] = backstop setting (converted to mm)
+
+Process Control Registers:
+R[5] = PARTS_REMAINING (decremented by INCREMENT_COUNT)
+R[6] = rowCount (loop counter 1-4)
+R[7] = colCount (loop counter 1-16)
+
+Dimension Calculation Registers:
+R[9] = horiz_spacing (45mm constant)
+R[10] = vert_spacing (127mm constant)
+R[11] = fixturelen_raw (304.8mm constant)
+R[13] = fixtureLen_calc (calculated fixture length)
+R[14] = part_protrude (part protrusion calc)
+R[15] = part_gripped (22% of part length)
+R[16] = radial_offset (radial offset calc)
+R[18] = approach_adj (38.1mm constant)
+R[19] = jig_height (3.175mm constant)
+R[20] = critical_dia (30.67mm threshold)
+R[21] = part_ungrip (part ungrip calc)
+
+Furnace Status Registers:
+R[22] = FURNACE1_STATE (0=empty, 1=loading, 2=heating, 3=ready)
+R[23] = FURNACE2_STATE (0=empty, 1=loading, 2=heating, 3=ready)
+R[24] = PRIORITY_FURNACE (1 or 2, ready first)
+R[25] = AVAILABLE_FURNACE (1 or 2, can accept part)
+
+Torque Monitoring Registers (Written by TORQUE_MONITOR):
+R[50] = j1 torque (from $MISC[1].$HPD_TRQ[1])
+R[51] = j2 torque (from $MISC[1].$HPD_TRQ[2])
+R[52] = j3 torque (from $MISC[1].$HPD_TRQ[3])
+R[53] = j4 torque (from $MISC[1].$HPD_TRQ[4])
+R[54] = j5 torque (from $MISC[1].$HPD_TRQ[5])
+R[55] = j6 torque (from $MISC[1].$HPD_TRQ[6])
+
+Joint Angle Registers (Written by ANGLE_MONITOR):
+R[60] = j1 angle (from $MOR_GRP[1].$CURRENT_ANG[1])
+R[61] = j2 angle (from $MOR_GRP[1].$CURRENT_ANG[2])
+R[62] = j3 angle (from $MOR_GRP[1].$CURRENT_ANG[3])
+R[63] = j4 angle (from $MOR_GRP[1].$CURRENT_ANG[4])
+R[64] = j5 angle (from $MOR_GRP[1].$CURRENT_ANG[5])
+R[65] = j6 angle (from $MOR_GRP[1].$CURRENT_ANG[6])
+
+Force Control Registers (Written by Python PC):
+R[80] = j1dt (J1 torque derivative, skip condition <= -800)
+R[91] = j6d2t (J6 second derivative, unused skip >= 200)
+
+System Registers:
+R[100] = zeros (zero position PR[100])
+R[190-200] = logging registers (initialized to 0)
+
+============ DIGITAL I/O MAPPING ============
+Digital Inputs:
+DI[2] = Part ready signal from PLC
+DI[4] = FURN1_DONE (Furnace 1 done signal)
+DI[5] = FURN2_DONE (Furnace 2 done signal)
+DI[6] = PRESS_READY (Press ready signal)
+
+Digital Outputs:
+DO[1] = PART_READY (Part ready signal to PLC)
+DO[2] = FURN1_START (Furnace 1 start signal)
+DO[3] = FURN2_START (Furnace 2 start signal)
+
+============ POSITION REGISTER MAPPING ============
+PR[1] = input/input_base (Input base position)
+PR[2] = furnace (Furnace position)
+PR[3] = pushstart (Push start offset)
+PR[5] = pushstart (Push start position)
+PR[6] = pushend (Push end position)
+PR[7] = output (Output position)
+PR[8] = calc_pos (Calculated position)
+PR[11] = array_approach/pick_pos (Array positions)
+PR[20] = zoffset150 (Z offset 150mm)
+PR[21-25] = approach/pick offsets (Various offsets)
+PR[100] = zeros (Zero position)
+
+============ SYSTEM VARIABLES ============
+Torque System Variables:
+$MISC[1].$HPD_TRQ[1-6] = High precision torque values for joints 1-6
+
+Joint Angle System Variables:
+$MOR_GRP[1].$CURRENT_ANG[1-6] = Current joint angles for joints 1-6
+
+Timer System Variables:
+TIMER[1], TIMER[2], TIMER[3] = System timers (reset in INIT_VARS)
+
+============ CRITICAL FORCE CONTROL PARAMETERS ============
+Primary skip condition: R[80:j1dt]<=(-800) (J1 torque derivative)
+Secondary skip condition: R[91:j6d2t]>=200 (J6 second derivative, commented out)
+
+============ REGISTER USAGE SUMMARY ============
+Total R registers used: ~35
+- PLC Interface: R[1-4], R[12]
+- Process Control: R[5-7]
+- Calculations: R[9-11], R[13-21]
+- Furnace Management: R[22-25]
+- Torque Monitoring: R[50-55]
+- Joint Angles: R[60-65]
+- Force Control: R[80], R[91]
+- System: R[100], R[190-200]
+
+Digital I/O used: 4 inputs (DI[2,4,5,6]), 3 outputs (DO[1,2,3])
+Position registers: 15+ positions (PR[1-11], PR[20-25], PR[100])
