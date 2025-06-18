@@ -47,6 +47,7 @@ AUTO_SINGULARITY_HEADER;
 : !DO[2] = Furnace 1 start signal;
 : !DO[3] = Furnace 2 start signal;
 :;
+: !Inits;
 : CALL INIT_VARS  ;
 : CALL SAFETY_CHECK ;
 : CALL HOME ;

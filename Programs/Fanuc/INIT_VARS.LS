@@ -12,7 +12,6 @@
 : !####  FURNACE  ####;
 : !###################;
 :;
-: !UPDATE THESE!!!!;
 : R[22:FURNACE1_STATE]=0 ;
 : R[23:FURNACE2_STATE]=0 ;
 : R[24:PRIORITY_FURNACE]=0 ;
