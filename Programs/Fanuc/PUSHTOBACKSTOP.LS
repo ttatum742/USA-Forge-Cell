@@ -38,7 +38,7 @@ AUTO_SINGULARITY_HEADER;
   12:   IF (AR[1]=2) THEN ;
   13:     PR[31,3:push_dist2]=(PR[5,3:pushstart]-PR[6,3:pushend]) ;
   14:   ELSE ;
-  15:     MESSAGE[AR1 undefined] ;
+  15:     MESSAGE[furnace arg undefined] ;
   16:   ENDIF ;
   17:  ENDIF ;
   18:  JMP LBL[99] ;
