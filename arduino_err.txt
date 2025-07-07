@@ -1,0 +1,50 @@
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino: In function 'void initializeFilter()':
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino:119:23: error: 'filterSamples' was not declared in this scope
+   for (int i = 0; i < filterSamples; i++) {
+                       ^~~~~~~~~~~~~
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino:119:23: note: suggested alternative: 'setFilterSamples'
+   for (int i = 0; i < filterSamples; i++) {
+                       ^~~~~~~~~~~~~
+                       setFilterSamples
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino:123:5: error: 'lastMeasurements' was not declared in this scope
+     lastMeasurements[i] = distance;
+     ^~~~~~~~~~~~~~~~
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino:123:5: note: suggested alternative: 'lastMeasurementTime'
+     lastMeasurements[i] = distance;
+     ^~~~~~~~~~~~~~~~
+     lastMeasurementTime
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino:126:3: error: 'filterIndex' was not declared in this scope
+   filterIndex = 0;
+   ^~~~~~~~~~~
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino:127:3: error: 'filterInitialized' was not declared in this scope
+   filterInitialized = true;
+   ^~~~~~~~~~~~~~~~~
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino: In function 'float applyFilter(float)':
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino:165:3: error: 'lastMeasurements' was not declared in this scope
+   lastMeasurements[filterIndex] = newValue;
+   ^~~~~~~~~~~~~~~~
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino:165:3: note: suggested alternative: 'lastMeasurementTime'
+   lastMeasurements[filterIndex] = newValue;
+   ^~~~~~~~~~~~~~~~
+   lastMeasurementTime
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino:165:20: error: 'filterIndex' was not declared in this scope
+   lastMeasurements[filterIndex] = newValue;
+                    ^~~~~~~~~~~
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino:166:37: error: 'filterSamples' was not declared in this scope
+   filterIndex = (filterIndex + 1) % filterSamples;
+                                     ^~~~~~~~~~~~~
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino:166:37: note: suggested alternative: 'setFilterSamples'
+   filterIndex = (filterIndex + 1) % filterSamples;
+                                     ^~~~~~~~~~~~~
+                                     setFilterSamples
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino: In function 'void setFilterSamples(String)':
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino:283:7: error: 'filterSamples' was not declared in this scope
+       filterSamples = newFilterSamples;
+       ^~~~~~~~~~~~~
+C:\Users\ttatum\Documents\Projects\USA FORGE CELL\USA-Forge-Cell\Programs\Arduino\keyence_always_on\keyence_always_on.ino:283:7: note: suggested alternative: 'newFilterSamples'
+       filterSamples = newFilterSamples;
+       ^~~~~~~~~~~~~
+       newFilterSamples
+exit status 1
+
+Compilation error: 'filterSamples' was not declared in this scope

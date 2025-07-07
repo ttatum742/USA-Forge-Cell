@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 class DieScannerDebugger:
     """Debug visualization tool for die scanner system"""
     
-    def __init__(self, robot_ip: str = "192.168.0.1", arduino_port: str = "COM3"):
+    def __init__(self, robot_ip: str = "192.168.0.1", arduino_port: str = "COM8"):
         self.robot_ip = robot_ip
         self.arduino_port = arduino_port
         
