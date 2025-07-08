@@ -1,627 +1,738 @@
 """
-Die Scanner Debug Visualization Tool
+Die Scanner Debug Program - Continuous Edge Detection
+This program implements continuous die edge scanning using the Keyence sensor
+with real-time robot position tracking and Arduino communication.
 
-This program provides real-time visualization and debugging capabilities 
-for the Keyence die scanner system. It displays scan results, post-processing
-results, and allows for interactive analysis of measurement data.
+Uses keyence_always_on Arduino connection and torque_derivative.py syntax
+for Fanuc communications with updated register assignments (R[86-189]).
 """
 
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib.widgets import Button, Slider, CheckButtons
+from cpppo.server.enip.get_attribute import proxy_simple
+import serial
 import numpy as np
-import json
 import time
 import logging
-from typing import List, Dict, Optional, Tuple
-from dataclasses import asdict
-import serial
 import threading
 from queue import Queue, Empty
-
-# Import the main scanner classes
-from dieScanner_keyence import KeyenceDieMeasurement, MeasurementPoint, DieResults, WellCenterResult, ZoneClassification
+from typing import List, Dict, Optional, Tuple, NamedTuple
+from dataclasses import dataclass
+import json
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-class DieScannerDebugger:
-    """Debug visualization tool for die scanner system"""
+@dataclass
+class ScanPoint:
+    """Individual scan measurement point"""
+    x: float
+    y: float 
+    z: float
+    height: float
+    is_valid: bool
+    timestamp: float
+
+@dataclass
+class EdgePoint:
+    """Die edge detection point"""
+    x: float
+    y: float
+    edge_type: str  # 'drop_off', 'rise', 'stable'
+    confidence: float
+
+@dataclass
+class DieCenter:
+    """Final die center calculation result"""
+    center_x: float
+    center_y: float
+    diameter: float
+    avg_height: float
+    confidence: float
+    edge_points: List[EdgePoint]
+
+class DieScanRobotInterface(proxy_simple):
+    """Robot communication interface using torque_derivative.py syntax"""
+    
+    PARAMETERS = dict(proxy_simple.PARAMETERS,
+        # Die Scan Communication Registers (R[86-96])
+        ds_command=proxy_simple.parameter('@0x6B/1/86', 'DINT', 'cmd'),
+        ds_status=proxy_simple.parameter('@0x6B/1/87', 'DINT', 'status'),
+        ds_current_x=proxy_simple.parameter('@0x6B/1/88', 'REAL', 'mm'),
+        ds_current_y=proxy_simple.parameter('@0x6B/1/89', 'REAL', 'mm'),
+        ds_current_z=proxy_simple.parameter('@0x6B/1/90', 'REAL', 'mm'),
+        ds_point_counter=proxy_simple.parameter('@0x6B/1/91', 'DINT', 'count'),
+        ds_total_points=proxy_simple.parameter('@0x6B/1/92', 'DINT', 'count'),
+        ds_center_x=proxy_simple.parameter('@0x6B/1/93', 'REAL', 'mm'),
+        ds_center_y=proxy_simple.parameter('@0x6B/1/94', 'REAL', 'mm'),
+        ds_avg_height=proxy_simple.parameter('@0x6B/1/95', 'REAL', 'mm'),
+        ds_confidence=proxy_simple.parameter('@0x6B/1/96', 'DINT', 'percent'),
+        
+        # Die Scan Edge Points (R[161-180])
+        ds_edge_x1=proxy_simple.parameter('@0x6B/1/161', 'REAL', 'mm'),
+        ds_edge_y1=proxy_simple.parameter('@0x6B/1/162', 'REAL', 'mm'),
+        ds_edge_x2=proxy_simple.parameter('@0x6B/1/163', 'REAL', 'mm'),
+        ds_edge_y2=proxy_simple.parameter('@0x6B/1/164', 'REAL', 'mm'),
+        ds_edge_x3=proxy_simple.parameter('@0x6B/1/165', 'REAL', 'mm'),
+        ds_edge_y3=proxy_simple.parameter('@0x6B/1/166', 'REAL', 'mm'),
+        ds_edge_x4=proxy_simple.parameter('@0x6B/1/167', 'REAL', 'mm'),
+        ds_edge_y4=proxy_simple.parameter('@0x6B/1/168', 'REAL', 'mm'),
+        ds_edge_x5=proxy_simple.parameter('@0x6B/1/169', 'REAL', 'mm'),
+        ds_edge_y5=proxy_simple.parameter('@0x6B/1/170', 'REAL', 'mm'),
+        ds_edge_x6=proxy_simple.parameter('@0x6B/1/171', 'REAL', 'mm'),
+        ds_edge_y6=proxy_simple.parameter('@0x6B/1/172', 'REAL', 'mm'),
+        ds_edge_x7=proxy_simple.parameter('@0x6B/1/173', 'REAL', 'mm'),
+        ds_edge_y7=proxy_simple.parameter('@0x6B/1/174', 'REAL', 'mm'),
+        ds_edge_x8=proxy_simple.parameter('@0x6B/1/175', 'REAL', 'mm'),
+        ds_edge_y8=proxy_simple.parameter('@0x6B/1/176', 'REAL', 'mm'),
+        
+        # Next position components (R[182-184]) - robot copies to PR[37]
+        ds_next_pos_x=proxy_simple.parameter('@0x6B/1/182', 'REAL', 'mm'),
+        ds_next_pos_y=proxy_simple.parameter('@0x6B/1/183', 'REAL', 'mm'),
+        ds_next_pos_z=proxy_simple.parameter('@0x6B/1/184', 'REAL', 'mm'),
+        
+        # Measurement System (R[140-143])
+        ds_measure_result=proxy_simple.parameter('@0x6B/1/140', 'REAL', 'mm'),
+        ds_measure_trigger=proxy_simple.parameter('@0x6B/1/141', 'DINT', 'trigger'),
+        ds_measure_complete=proxy_simple.parameter('@0x6B/1/142', 'DINT', 'complete'),
+        ds_laser_reading=proxy_simple.parameter('@0x6B/1/143', 'REAL', 'mm')
+    )
+
+    def __init__(self, ip_address: str = "192.168.0.1"):
+        super().__init__(host=ip_address, timeout=5.0)
+        self.ip_address = ip_address
+        logger.info(f"Robot interface initialized for {ip_address}")
+
+    def read_robot_position(self) -> Tuple[float, float, float]:
+        """Read current robot position"""
+        try:
+            x = self._read_parameter('ds_current_x') or 0.0
+            y = self._read_parameter('ds_current_y') or 0.0  
+            z = self._read_parameter('ds_current_z') or 0.0
+            return x, y, z
+        except Exception as e:
+            logger.error(f"Failed to read robot position: {e}")
+            return 0.0, 0.0, 0.0
+
+    def write_die_center(self, center: DieCenter):
+        """Write calculated die center to robot"""
+        try:
+            self._write_parameter('ds_center_x', center.center_x)
+            self._write_parameter('ds_center_y', center.center_y)
+            self._write_parameter('ds_avg_height', center.avg_height)
+            self._write_parameter('ds_confidence', int(center.confidence))
+            
+            # Write edge points
+            for i, edge_point in enumerate(center.edge_points[:8]):
+                self._write_parameter(f'ds_edge_x{i+1}', edge_point.x)
+                self._write_parameter(f'ds_edge_y{i+1}', edge_point.y)
+                
+            logger.info(f"Die center written to robot: ({center.center_x:.1f}, {center.center_y:.1f})")
+            
+        except Exception as e:
+            logger.error(f"Failed to write die center: {e}")
+
+    def set_status(self, status: int):
+        """Set die scan status"""
+        try:
+            self._write_parameter('ds_status', status)
+        except Exception as e:
+            logger.error(f"Failed to set status: {e}")
+
+    def _read_parameter(self, param_name: str) -> Optional[float]:
+        """Read a single parameter value"""
+        try:
+            param_str = self.parameter_substitution(param_name)
+            result, = self.read(param_str, checking=True)
+            return float(result[0]) if isinstance(result, list) else float(result)
+        except Exception as e:
+            logger.error(f"Failed to read {param_name}: {e}")
+            return None
+
+    def _write_parameter(self, param_name: str, value: float):
+        """Write a single parameter value"""
+        try:
+            param_str = self.parameter_substitution(param_name)
+            self.write(param_str, value)
+        except Exception as e:
+            logger.error(f"Failed to write {param_name}: {e}")
+            raise
+
+class KeyenceAlwaysOnInterface:
+    """Interface for keyence_always_on Arduino connection"""
+    
+    def __init__(self, port: str = "COM8", baudrate: int = 115200):
+        self.port = port
+        self.baudrate = baudrate
+        self.connection = None
+        self.is_connected = False
+        
+    def connect(self) -> bool:
+        """Connect to Arduino"""
+        try:
+            self.connection = serial.Serial(self.port, self.baudrate, timeout=1)
+            time.sleep(2)  # Allow Arduino to initialize
+            
+            # Test connection
+            response = self.send_command("STATUS")
+            if "STATUS:" in response:
+                self.is_connected = True
+                logger.info(f"Connected to Arduino on {self.port}")
+                return True
+            else:
+                logger.error("Arduino not responding properly")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Failed to connect to Arduino: {e}")
+            return False
+    
+    def disconnect(self):
+        """Disconnect from Arduino"""
+        if self.connection:
+            try:
+                self.connection.close()
+                self.is_connected = False
+                logger.info("Disconnected from Arduino")
+            except Exception as e:
+                logger.error(f"Error disconnecting: {e}")
+    
+    def send_command(self, command: str) -> str:
+        """Send command to Arduino and get response"""
+        if not self.is_connected:
+            return "ERROR:NOT_CONNECTED"
+            
+        try:
+            self.connection.write(f"{command}\n".encode())
+            response = self.connection.readline().decode().strip()
+            return response
+        except Exception as e:
+            logger.error(f"Command '{command}' failed: {e}")
+            return f"ERROR:{e}"
+    
+    def read_height(self) -> float:
+        """Read current height measurement"""
+        response = self.send_command("READ")
+        if response.startswith("HEIGHT:"):
+            try:
+                return float(response.replace("HEIGHT:", ""))
+            except ValueError:
+                logger.error(f"Invalid height response: {response}")
+                return -999.0
+        else:
+            logger.error(f"Invalid read response: {response}")
+            return -999.0
+    
+    def calibrate(self, reference_distance: float) -> bool:
+        """Perform calibration"""
+        # Start calibration
+        response = self.send_command("CALIBRATE")
+        if "CALIBRATION:STARTING" not in response:
+            return False
+            
+        time.sleep(0.5)
+        
+        # Send reference distance
+        response = self.send_command(f"CAL_DISTANCE {reference_distance}")
+        
+        # Wait for completion
+        for _ in range(30):  # 30 second timeout
+            time.sleep(1)
+            if "CALIBRATION:COMPLETE" in response:
+                logger.info(f"Calibration completed with reference {reference_distance}mm")
+                return True
+            elif "CALIBRATION:ERROR" in response:
+                logger.error(f"Calibration failed: {response}")
+                return False
+                
+        logger.error("Calibration timeout")
+        return False
+
+class ContinuousDieScanner:
+    """Main continuous die scanning class"""
     
     def __init__(self, robot_ip: str = "192.168.0.1", arduino_port: str = "COM8"):
-        self.robot_ip = robot_ip
-        self.arduino_port = arduino_port
+        self.robot = DieScanRobotInterface(robot_ip)
+        self.arduino = KeyenceAlwaysOnInterface(arduino_port)
         
-        # Data storage
-        self.measurement_history: List[List[MeasurementPoint]] = []
-        self.results_history: List[DieResults] = []
-        self.well_results_history: List[WellCenterResult] = []
-        self.current_measurements: List[MeasurementPoint] = []
-        self.current_results: Optional[DieResults] = None
-        self.current_well_result: Optional[WellCenterResult] = None
-        self.current_zones: Optional[ZoneClassification] = None
+        # Scanning parameters
+        self.scan_points: List[ScanPoint] = []
+        self.edge_points: List[EdgePoint] = []
+        self.scanning_active = False
+        self.scan_start_time = 0
         
-        # Live data monitoring
-        self.live_monitoring = False
-        self.arduino_connection = None
-        self.data_queue = Queue()
-        self.monitoring_thread = None
+        # Edge detection parameters
+        self.height_threshold = 5.0  # mm drop for edge detection
+        self.edge_confidence_threshold = 0.7
+        self.expected_die_diameter = 107.95  # 4.25 inches in mm
+        self.die_tolerance = 10.0  # mm tolerance for die diameter
         
-        # Visualization state
-        self.show_grid = True
-        self.show_valid_points = True
-        self.show_invalid_points = True
-        self.show_center = True
-        self.show_confidence_regions = True
+        # Background position tracking
+        self.position_thread = None
+        self.position_queue = Queue()
+        self.tracking_active = False
         
-        # Initialize GUI
-        self.setup_gui()
+    def initialize(self) -> bool:
+        """Initialize all connections"""
+        logger.info("Initializing die scanner debug system...")
         
-    def setup_gui(self):
-        """Setup the debugging GUI"""
-        # Create main figure with subplots
-        self.fig = plt.figure(figsize=(16, 12))
-        self.fig.suptitle('Die Scanner Debug Visualization', fontsize=16)
-        
-        # Create subplot grid
-        gs = self.fig.add_gridspec(3, 3, hspace=0.3, wspace=0.3)
-        
-        # Main 3D visualization
-        self.ax_3d = self.fig.add_subplot(gs[0:2, 0:2], projection='3d')
-        self.ax_3d.set_title('3D Measurement Visualization')
-        
-        # 2D height map
-        self.ax_2d = self.fig.add_subplot(gs[0, 2])
-        self.ax_2d.set_title('Height Map')
-        
-        # Statistics plot
-        self.ax_stats = self.fig.add_subplot(gs[1, 2])
-        self.ax_stats.set_title('Measurement Statistics')
-        
-        # Live sensor reading
-        self.ax_live = self.fig.add_subplot(gs[2, 0])
-        self.ax_live.set_title('Live Sensor Reading')
-        
-        # Analysis results
-        self.ax_results = self.fig.add_subplot(gs[2, 1])
-        self.ax_results.set_title('Analysis Results')
-        self.ax_results.axis('off')
-        
-        # Control panel
-        self.ax_controls = self.fig.add_subplot(gs[2, 2])
-        self.ax_controls.set_title('Controls')
-        self.ax_controls.axis('off')
-        
-        # Setup controls
-        self.setup_controls()
-        
-        # Initialize plots
-        self.initialize_plots()
-        
-    def setup_controls(self):
-        """Setup control buttons and checkboxes"""
-        # Control buttons
-        ax_load = plt.axes([0.7, 0.15, 0.08, 0.04])
-        ax_save = plt.axes([0.79, 0.15, 0.08, 0.04])
-        ax_clear = plt.axes([0.88, 0.15, 0.08, 0.04])
-        ax_live = plt.axes([0.7, 0.10, 0.08, 0.04])
-        ax_arduino = plt.axes([0.79, 0.10, 0.08, 0.04])
-        
-        self.btn_load = Button(ax_load, 'Load')
-        self.btn_save = Button(ax_save, 'Save')
-        self.btn_clear = Button(ax_clear, 'Clear')
-        self.btn_live = Button(ax_live, 'Live Mon')
-        self.btn_arduino = Button(ax_arduino, 'Arduino')
-        
-        # Connect button callbacks
-        self.btn_load.on_clicked(self.load_data)
-        self.btn_save.on_clicked(self.save_data)
-        self.btn_clear.on_clicked(self.clear_data)
-        self.btn_live.on_clicked(self.toggle_live_monitoring)
-        self.btn_arduino.on_clicked(self.test_arduino)
-        
-        # Visualization checkboxes
-        ax_checks = plt.axes([0.7, 0.02, 0.25, 0.06])
-        self.checkboxes = CheckButtons(ax_checks, 
-                                     ['Grid', 'Valid', 'Invalid', 'Center', 'Confidence'],
-                                     [True, True, True, True, True])
-        self.checkboxes.on_clicked(self.update_visualization_options)
-        
-    def initialize_plots(self):
-        """Initialize empty plots"""
-        # Initialize 3D plot
-        self.ax_3d.set_xlabel('X (mm)')
-        self.ax_3d.set_ylabel('Y (mm)')
-        self.ax_3d.set_zlabel('Height (mm)')
-        
-        # Initialize 2D plot
-        self.ax_2d.set_xlabel('X Index')
-        self.ax_2d.set_ylabel('Y Index')
-        
-        # Initialize live plot
-        self.live_data_x = []
-        self.live_data_y = []
-        self.ax_live.set_xlabel('Time (s)')
-        self.ax_live.set_ylabel('Height (mm)')
-        
-        # Initialize statistics plot
-        self.ax_stats.set_xlabel('Measurement')
-        self.ax_stats.set_ylabel('Count')
-        
-    def load_scanner_data(self, scanner: KeyenceDieMeasurement):
-        """Load data from a scanner instance"""
-        if scanner.measurement_points:
-            self.current_measurements = scanner.measurement_points.copy()
-            self.measurement_history.append(self.current_measurements)
+        # Connect to Arduino
+        if not self.arduino.connect():
+            logger.error("Failed to connect to Arduino")
+            return False
             
-            # Try to get enhanced results if available
-            if hasattr(scanner, 'well_result') and scanner.well_result:
-                self.current_well_result = scanner.well_result
-                self.well_results_history.append(self.current_well_result)
-                
-            if hasattr(scanner, 'zone_classification') and scanner.zone_classification:
-                self.current_zones = scanner.zone_classification
-            
-            self.update_visualization()
-            logger.info(f"Loaded {len(self.current_measurements)} measurement points with enhanced analysis")
-            
-    def update_visualization(self):
-        """Update all visualization plots"""
-        if not self.current_measurements:
-            return
-            
-        # Clear previous plots
-        self.ax_3d.clear()
-        self.ax_2d.clear()
-        self.ax_stats.clear()
-        
-        # Separate valid and invalid points
-        valid_points = [p for p in self.current_measurements if p.is_valid]
-        invalid_points = [p for p in self.current_measurements if not p.is_valid]
-        
-        # 3D Visualization
-        self.plot_3d_measurements(valid_points, invalid_points)
-        
-        # 2D Height map
-        self.plot_2d_heatmap(valid_points, invalid_points)
-        
-        # Statistics
-        self.plot_statistics(valid_points, invalid_points)
-        
-        # Results text
-        self.display_results()
-        
-        # Refresh the plot
-        plt.draw()
-        
-    def plot_3d_measurements(self, valid_points: List[MeasurementPoint], 
-                           invalid_points: List[MeasurementPoint]):
-        """Plot 3D measurement visualization"""
-        
-        # Plot valid points
-        if valid_points and self.show_valid_points:
-            x_valid = [p.x for p in valid_points]
-            y_valid = [p.y for p in valid_points]
-            z_valid = [p.height for p in valid_points]
-            
-            scatter = self.ax_3d.scatter(x_valid, y_valid, z_valid, 
-                                       c=z_valid, cmap='viridis', 
-                                       s=50, alpha=0.7, label='Valid')
-            
-        # Plot invalid points (out of range)
-        if invalid_points and self.show_invalid_points:
-            x_invalid = [p.x for p in invalid_points]
-            y_invalid = [p.y for p in invalid_points]
-            z_invalid = [p.z for p in invalid_points]  # Use robot Z position
-            
-            self.ax_3d.scatter(x_invalid, y_invalid, z_invalid, 
-                             c='red', s=100, alpha=0.8, 
-                             marker='x', label='Out of Range')
-        
-        # Plot estimated center
-        if self.current_results and self.show_center:
-            center_x = self.current_results.center_x
-            center_y = self.current_results.center_y
-            # Use average robot Z position for center
-            avg_z = np.mean([p.z for p in self.current_measurements])
-            
-            self.ax_3d.scatter([center_x], [center_y], [avg_z], 
-                             c='orange', s=200, marker='*', 
-                             label=f'Center ({center_x:.1f}, {center_y:.1f})')
-        
-        self.ax_3d.set_xlabel('X (mm)')
-        self.ax_3d.set_ylabel('Y (mm)')
-        self.ax_3d.set_zlabel('Height (mm)')
-        self.ax_3d.legend()
-        self.ax_3d.set_title('3D Measurement Data')
-        
-    def plot_2d_heatmap(self, valid_points: List[MeasurementPoint], 
-                       invalid_points: List[MeasurementPoint]):
-        """Plot 2D height map"""
-        
-        if not valid_points:
-            self.ax_2d.text(0.5, 0.5, 'No valid measurements', 
-                          ha='center', va='center', transform=self.ax_2d.transAxes)
-            return
-            
-        # Create grid for interpolation
-        all_points = valid_points + invalid_points
-        x_coords = [p.x for p in all_points]
-        y_coords = [p.y for p in all_points]
-        
-        if len(set(x_coords)) < 2 or len(set(y_coords)) < 2:
-            self.ax_2d.text(0.5, 0.5, 'Insufficient data for grid', 
-                          ha='center', va='center', transform=self.ax_2d.transAxes)
-            return
-        
-        # Create regular grid
-        x_min, x_max = min(x_coords), max(x_coords)
-        y_min, y_max = min(y_coords), max(y_coords)
-        
-        grid_size = int(np.sqrt(len(all_points))) or 5
-        x_grid = np.linspace(x_min, x_max, grid_size)
-        y_grid = np.linspace(y_min, y_max, grid_size)
-        X, Y = np.meshgrid(x_grid, y_grid)
-        
-        # Create height map (use -999 for invalid points)
-        Z = np.full_like(X, np.nan)
-        
-        for i, x_val in enumerate(x_grid):
-            for j, y_val in enumerate(y_grid):
-                # Find closest measurement point
-                distances = [np.sqrt((p.x - x_val)**2 + (p.y - y_val)**2) 
-                           for p in all_points]
-                closest_idx = np.argmin(distances)
-                closest_point = all_points[closest_idx]
-                
-                if distances[closest_idx] < 10:  # Within 10mm
-                    if closest_point.is_valid:
-                        Z[j, i] = closest_point.height
-                    else:
-                        Z[j, i] = -999  # Mark as out of range
-        
-        # Plot heatmap
-        im = self.ax_2d.imshow(Z, extent=[x_min, x_max, y_min, y_max], 
-                              origin='lower', cmap='viridis', alpha=0.8)
-        
-        # Add colorbar
-        plt.colorbar(im, ax=self.ax_2d, shrink=0.8)
-        
-        # Overlay measurement points
-        if self.show_valid_points:
-            x_valid = [p.x for p in valid_points]
-            y_valid = [p.y for p in valid_points]
-            self.ax_2d.scatter(x_valid, y_valid, c='white', s=20, alpha=0.8)
-            
-        if self.show_invalid_points:
-            x_invalid = [p.x for p in invalid_points]
-            y_invalid = [p.y for p in invalid_points]
-            self.ax_2d.scatter(x_invalid, y_invalid, c='red', s=30, marker='x')
-        
-        # Mark center
-        if self.current_results and self.show_center:
-            self.ax_2d.scatter([self.current_results.center_x], 
-                             [self.current_results.center_y], 
-                             c='orange', s=100, marker='*')
-        
-        self.ax_2d.set_xlabel('X (mm)')
-        self.ax_2d.set_ylabel('Y (mm)')
-        self.ax_2d.set_title('2D Height Map')
-        
-    def plot_statistics(self, valid_points: List[MeasurementPoint], 
-                       invalid_points: List[MeasurementPoint]):
-        """Plot measurement statistics"""
-        
-        if valid_points:
-            heights = [p.height for p in valid_points]
-            self.ax_stats.hist(heights, bins=min(20, len(heights)//3), 
-                             alpha=0.7, label=f'Valid ({len(valid_points)})')
-        
-        # Add statistics text
-        stats_text = f"Total Points: {len(self.current_measurements)}\\n"
-        stats_text += f"Valid: {len(valid_points)}\\n"
-        stats_text += f"Invalid: {len(invalid_points)}\\n"
-        
-        if valid_points:
-            heights = [p.height for p in valid_points]
-            stats_text += f"Height Range: {min(heights):.1f} - {max(heights):.1f} mm\\n"
-            stats_text += f"Mean Height: {np.mean(heights):.1f} mm\\n"
-            stats_text += f"Std Dev: {np.std(heights):.1f} mm"
-        
-        self.ax_stats.text(0.05, 0.95, stats_text, transform=self.ax_stats.transAxes,
-                         verticalalignment='top', fontsize=10,
-                         bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.8))
-        
-        self.ax_stats.set_xlabel('Height (mm)')
-        self.ax_stats.set_ylabel('Count')
-        self.ax_stats.legend()
-        
-    def display_results(self):
-        """Display analysis results"""
-        self.ax_results.clear()
-        self.ax_results.axis('off')
-        
-        if self.current_well_result:
-            # Enhanced well center results
-            results_text = "ENHANCED WELL ANALYSIS\\n"
-            results_text += "=" * 20 + "\\n"
-            results_text += f"Well Center X: {self.current_well_result.center_x:.1f} mm\\n"
-            results_text += f"Well Center Y: {self.current_well_result.center_y:.1f} mm\\n"
-            results_text += f"Well Diameter: {self.current_well_result.well_diameter:.1f} mm\\n"
-            results_text += f"Confidence: {self.current_well_result.confidence:.1f}%\\n"
-            
-            if self.current_zones:
-                results_text += f"\\nZONE CLASSIFICATION:\\n"
-                results_text += f"Die Face: {len(self.current_zones.die_face)} pts\\n"
-                results_text += f"Central Well: {len(self.current_zones.central_well)} pts\\n"
-                results_text += f"Outer Edges: {len(self.current_zones.outer_edges)} pts\\n"
-                results_text += f"Face Height: {self.current_zones.die_face_height:.1f} mm"
-            
-            confidence_color = ('green' if self.current_well_result.confidence >= 70 else 
-                              'orange' if self.current_well_result.confidence >= 50 else 'red')
-            
-        elif self.current_results:
-            # Legacy results
-            results_text = "LEGACY ANALYSIS RESULTS\\n"
-            results_text += "=" * 20 + "\\n"
-            results_text += f"Center X: {self.current_results.center_x:.1f} mm\\n"
-            results_text += f"Center Y: {self.current_results.center_y:.1f} mm\\n"
-            results_text += f"Avg Height: {self.current_results.average_height:.1f} mm\\n"
-            results_text += f"Confidence: {self.current_results.confidence:.1f}%\\n"
-            results_text += f"Face Points: {len(self.current_results.die_face_points)}\\n"
-            results_text += f"Center Points: {len(self.current_results.center_area_points)}"
-            
-            confidence_color = ('green' if self.current_results.confidence >= 70 else 
-                              'orange' if self.current_results.confidence >= 50 else 'red')
-            
-        else:
-            results_text = "NO ANALYSIS RESULTS\\n"
-            results_text += "Run enhanced scanner to generate results"
-            confidence_color = 'gray'
-        
-        self.ax_results.text(0.05, 0.95, results_text, transform=self.ax_results.transAxes,
-                           verticalalignment='top', fontsize=9,
-                           bbox=dict(boxstyle='round', facecolor=confidence_color, alpha=0.3))
-        
-    def toggle_live_monitoring(self, event):
-        """Toggle live sensor monitoring"""
-        self.live_monitoring = not self.live_monitoring
-        
-        if self.live_monitoring:
-            self.start_live_monitoring()
-            self.btn_live.label.set_text('Stop')
-        else:
-            self.stop_live_monitoring()
-            self.btn_live.label.set_text('Live Mon')
-            
-    def start_live_monitoring(self):
-        """Start live monitoring thread"""
+        # Test robot connection
         try:
-            self.arduino_connection = serial.Serial(self.arduino_port, 115200, timeout=1)
-            time.sleep(2)
-            
-            # Turn on sensor
-            self.arduino_connection.write(b'POWER_ON\\n')
-            time.sleep(0.5)
-            
-            self.monitoring_thread = threading.Thread(target=self.live_monitoring_worker)
-            self.monitoring_thread.daemon = True
-            self.monitoring_thread.start()
-            
-            # Start animation for live plot
-            self.live_animation = animation.FuncAnimation(self.fig, self.update_live_plot, 
-                                                        interval=100, blit=False)
-            
-            logger.info("Live monitoring started")
-            
+            self.robot.set_status(0)  # Set ready status
+            logger.info("Robot connection verified")
         except Exception as e:
-            logger.error(f"Failed to start live monitoring: {e}")
-            self.live_monitoring = False
+            logger.error(f"Robot connection failed: {e}")
+            return False
             
-    def live_monitoring_worker(self):
-        """Worker thread for live sensor monitoring"""
-        start_time = time.time()
+        return True
+    
+    def pickup_sensor_jig(self):
+        """Step 1: Pick up sensor jig from fixture"""
+        logger.info("Step 1: Picking up sensor jig...")
+        self.robot.set_status(1)  # Busy status
         
-        while self.live_monitoring and self.arduino_connection:
+        # Set command to move to sensor jig pickup (handled by diescan_debug.ls)
+        try:
+            self.robot._write_parameter('ds_command', 1)  # Pickup command
+            logger.info("Sensor jig pickup command sent to robot")
+        except Exception as e:
+            logger.error(f"Failed to send pickup command: {e}")
+    
+    def move_to_scan_start(self):
+        """Step 2: Move to scan start position 65mm above static point"""
+        logger.info("Step 2: Moving to scan start position...")
+        
+        try:
+            self.robot._write_parameter('ds_command', 2)  # Move to start command
+            logger.info("Move to scan start command sent")
+        except Exception as e:
+            logger.error(f"Failed to send move command: {e}")
+    
+    def calibrate_sensor(self) -> bool:
+        """Step 3: Calibrate sensor at 65mm"""
+        logger.info("Step 3: Calibrating sensor...")
+        
+        # Perform Arduino calibration
+        if not self.arduino.calibrate(65.0):
+            logger.error("Sensor calibration failed")
+            return False
+            
+        # Verify we're at 65mm (±0.02mm)
+        height = self.arduino.read_height()
+        if abs(height - 65.0) > 0.02:
+            logger.error(f"Calibration verification failed: {height:.3f}mm != 65.000mm")
+            return False
+            
+        logger.info(f"Sensor calibrated and verified at {height:.3f}mm")
+        return True
+    
+    def start_position_tracking(self):
+        """Start background robot position tracking"""
+        self.tracking_active = True
+        self.position_thread = threading.Thread(target=self._position_tracking_worker)
+        self.position_thread.daemon = True
+        self.position_thread.start()
+        logger.info("Background position tracking started")
+    
+    def stop_position_tracking(self):
+        """Stop background position tracking"""
+        self.tracking_active = False
+        if self.position_thread:
+            self.position_thread.join(timeout=1.0)
+        logger.info("Background position tracking stopped")
+    
+    def _position_tracking_worker(self):
+        """Background worker for robot position tracking (4ms intervals)"""
+        while self.tracking_active:
             try:
-                self.arduino_connection.write(b'READ\\n')
-                response = self.arduino_connection.readline().decode().strip()
+                x, y, z = self.robot.read_robot_position()
+                timestamp = time.time()
                 
-                if response.startswith('HEIGHT:'):
-                    height = float(response.replace('HEIGHT:', ''))
-                    current_time = time.time() - start_time
-                    
-                    self.data_queue.put((current_time, height))
-                    
-                time.sleep(0.1)  # 10Hz sampling
+                # Add to queue (keep only recent positions)
+                if self.position_queue.qsize() > 1000:  # Limit queue size
+                    try:
+                        self.position_queue.get_nowait()
+                    except Empty:
+                        pass
+                        
+                self.position_queue.put((x, y, z, timestamp))
                 
             except Exception as e:
-                logger.error(f"Live monitoring error: {e}")
-                break
+                logger.error(f"Position tracking error: {e}")
                 
-    def update_live_plot(self, frame):
-        """Update live sensor plot"""
-        # Get new data from queue
-        new_data = []
+            time.sleep(0.004)  # 4ms = 250Hz update rate
+    
+    def start_continuous_scanning(self):
+        """Step 5: Start continuous die edge scanning"""
+        logger.info("Step 5: Starting continuous die edge scanning...")
+        
+        self.scanning_active = True
+        self.scan_start_time = time.time()
+        self.scan_points.clear()
+        self.edge_points.clear()
+        
+        # Start position tracking
+        self.start_position_tracking()
+        
+        # Signal robot to start scanning motion
+        try:
+            self.robot._write_parameter('ds_command', 5)  # Start scanning command
+            logger.info("Continuous scanning started")
+        except Exception as e:
+            logger.error(f"Failed to start scanning: {e}")
+    
+    def continuous_scan_worker(self, duration: float = 30.0):
+        """Main continuous scanning loop with robot motion coordination"""
+        logger.info("Running continuous scan with robot motion coordination...")
+        
+        scan_count = 0
+        last_height = None
+        
+        # Wait for robot to signal ready for scanning (status = 10)
+        logger.info("Waiting for robot to be ready for scanning...")
+        timeout = 10.0
+        start_wait = time.time()
+        while time.time() - start_wait < timeout:
+            status = self.robot._read_parameter('ds_status')
+            if status == 10:
+                break
+            time.sleep(0.1)
+        else:
+            logger.error("Robot did not signal ready for scanning")
+            return
+        
+        # Initialize spiral pattern parameters  
+        spiral_radius = 5.0  # mm
+        spiral_angle = 0.0   # degrees
+        spiral_step = 2.0    # mm per revolution
+        max_radius = 60.0    # mm
+        angle_increment = 15.0  # degrees per step
+        
+        # Get starting position (estimated die center)
+        start_x, start_y, start_z = self.robot.read_robot_position()
+        logger.info(f"Starting spiral scan from ({start_x:.1f}, {start_y:.1f}, {start_z:.1f})")
+        
+        start_time = time.time()
+        
+        while self.scanning_active and (time.time() - start_time) < duration:
+            try:
+                # Calculate next spiral position using Python
+                angle_rad = np.radians(spiral_angle)
+                offset_x = spiral_radius * np.cos(angle_rad)
+                offset_y = spiral_radius * np.sin(angle_rad)
+                
+                next_x = start_x + offset_x
+                next_y = start_y + offset_y
+                next_z = start_z  # Keep same Z height
+                
+                # Write next position to numerical registers for robot to copy to PR[37]
+                self.robot._write_parameter('ds_next_pos_x', next_x)
+                self.robot._write_parameter('ds_next_pos_y', next_y) 
+                self.robot._write_parameter('ds_next_pos_z', next_z)
+                
+                # Signal robot to move to new position (status = 11)
+                self.robot._write_parameter('ds_status', 11)
+                
+                # Wait for robot to complete move (status = 10)
+                move_timeout = 5.0
+                move_start = time.time()
+                while time.time() - move_start < move_timeout:
+                    status = self.robot._read_parameter('ds_status')
+                    if status == 10:
+                        break
+                    time.sleep(0.01)
+                else:
+                    logger.warning("Robot move timeout")
+                
+                # Take sensor reading at this position
+                height = self.arduino.read_height()
+                
+                if height > -999:
+                    # Create scan point
+                    scan_point = ScanPoint(
+                        x=next_x, y=next_y, z=next_z,
+                        height=height,
+                        is_valid=True,
+                        timestamp=time.time()
+                    )
+                    
+                    self.scan_points.append(scan_point)
+                    scan_count += 1
+                    
+                    # Edge detection logic
+                    if last_height is not None:
+                        height_diff = height - last_height
+                        
+                        # Detect significant drop-offs (die edges)
+                        if height_diff < -self.height_threshold:
+                            edge_point = EdgePoint(
+                                x=next_x, y=next_y,
+                                edge_type='drop_off',
+                                confidence=min(abs(height_diff) / self.height_threshold, 1.0)
+                            )
+                            self.edge_points.append(edge_point)
+                            logger.info(f"Edge detected at ({next_x:.1f}, {next_y:.1f}): drop {height_diff:.1f}mm")
+                    
+                    last_height = height
+                    
+                    # Check if we have enough edge points for center calculation
+                    if len(self.edge_points) >= 4:
+                        estimated_center = self._estimate_center_from_edges()
+                        if estimated_center:
+                            # Check if we've found enough edges around the perimeter
+                            edge_coverage = self._calculate_edge_coverage(estimated_center)
+                            if edge_coverage > 0.6:  # 60% coverage
+                                logger.info(f"Sufficient edge coverage ({edge_coverage:.1%}), ending scan")
+                                # Signal robot scan complete (status = 12)
+                                self.robot._write_parameter('ds_status', 12)
+                                break
+                
+                # Update spiral parameters
+                spiral_angle += angle_increment
+                if spiral_angle >= 360:
+                    spiral_angle = 0
+                    spiral_radius += spiral_step
+                
+                # Check if we've reached maximum radius
+                if spiral_radius > max_radius:
+                    logger.info("Reached maximum scan radius")
+                    break
+                
+            except Exception as e:
+                logger.error(f"Scanning error: {e}")
+                time.sleep(0.1)
+        
+        logger.info(f"Continuous scan completed: {scan_count} points, {len(self.edge_points)} edges")
+        self.scanning_active = False
+        
+        # Signal robot scan complete
+        try:
+            self.robot._write_parameter('ds_status', 12)
+        except Exception as e:
+            logger.error(f"Failed to signal scan complete: {e}")
+    
+    def _get_current_position(self) -> Optional[Tuple[float, float, float, float]]:
+        """Get most recent robot position from queue"""
+        latest_pos = None
+        
+        # Drain queue to get most recent position
         try:
             while True:
-                new_data.append(self.data_queue.get_nowait())
+                latest_pos = self.position_queue.get_nowait()
         except Empty:
             pass
-        
-        # Add new data to live data
-        for timestamp, height in new_data:
-            self.live_data_x.append(timestamp)
-            self.live_data_y.append(height)
             
-        # Keep only last 100 points
-        if len(self.live_data_x) > 100:
-            self.live_data_x = self.live_data_x[-100:]
-            self.live_data_y = self.live_data_y[-100:]
-        
-        # Update plot
-        self.ax_live.clear()
-        if self.live_data_x:
-            self.ax_live.plot(self.live_data_x, self.live_data_y, 'b-', alpha=0.7)
-            self.ax_live.scatter(self.live_data_x[-1:], self.live_data_y[-1:], 
-                               c='red', s=50)
+        return latest_pos
+    
+    def _estimate_center_from_edges(self) -> Optional[Tuple[float, float]]:
+        """Estimate die center from detected edge points"""
+        if len(self.edge_points) < 3:
+            return None
             
-        self.ax_live.set_xlabel('Time (s)')
-        self.ax_live.set_ylabel('Height (mm)')
-        self.ax_live.set_title(f'Live Sensor Reading ({len(self.live_data_x)} points)')
-        self.ax_live.grid(True, alpha=0.3)
+        # Use least squares circle fitting
+        edge_coords = np.array([[ep.x, ep.y] for ep in self.edge_points])
         
-    def stop_live_monitoring(self):
-        """Stop live monitoring"""
-        self.live_monitoring = False
-        
-        if hasattr(self, 'live_animation'):
-            self.live_animation.event_source.stop()
-            
-        if self.arduino_connection:
-            try:
-                self.arduino_connection.write(b'POWER_OFF\\n')
-                time.sleep(0.5)
-                self.arduino_connection.close()
-            except:
-                pass
-            self.arduino_connection = None
-            
-        logger.info("Live monitoring stopped")
-        
-    def test_arduino(self, event):
-        """Test Arduino connection"""
         try:
-            test_conn = serial.Serial(self.arduino_port, 115200, timeout=2)
+            # Simple center estimation - average of edge points
+            center_x = np.mean(edge_coords[:, 0])
+            center_y = np.mean(edge_coords[:, 1])
+            
+            return center_x, center_y
+            
+        except Exception as e:
+            logger.error(f"Center estimation failed: {e}")
+            return None
+    
+    def _calculate_edge_coverage(self, center: Tuple[float, float]) -> float:
+        """Calculate how much of the die perimeter we've covered"""
+        if len(self.edge_points) < 2:
+            return 0.0
+            
+        center_x, center_y = center
+        
+        # Calculate angles of edge points relative to center
+        angles = []
+        for edge_point in self.edge_points:
+            dx = edge_point.x - center_x
+            dy = edge_point.y - center_y
+            angle = np.arctan2(dy, dx)
+            angles.append(angle)
+        
+        angles = np.array(sorted(angles))
+        
+        # Calculate angular coverage
+        if len(angles) < 2:
+            return 0.0
+            
+        # Find largest gap in angles
+        angle_diffs = np.diff(angles)
+        largest_gap = np.max(angle_diffs)
+        
+        # Total coverage = 2π - largest_gap
+        coverage = (2 * np.pi - largest_gap) / (2 * np.pi)
+        
+        return max(0.0, coverage)
+    
+    def calculate_final_center(self) -> Optional[DieCenter]:
+        """Step 6: Calculate final die center from all measurements"""
+        logger.info("Step 6: Calculating final die center...")
+        
+        if len(self.edge_points) < 4:
+            logger.error("Insufficient edge points for center calculation")
+            return None
+        
+        # Estimate center
+        estimated_center = self._estimate_center_from_edges()
+        if not estimated_center:
+            return None
+            
+        center_x, center_y = estimated_center
+        
+        # Calculate average radius/diameter
+        radii = []
+        for edge_point in self.edge_points:
+            dx = edge_point.x - center_x
+            dy = edge_point.y - center_y
+            radius = np.sqrt(dx*dx + dy*dy)
+            radii.append(radius)
+        
+        avg_radius = np.mean(radii)
+        diameter = avg_radius * 2
+        
+        # Calculate average die face height from scan points
+        valid_heights = [sp.height for sp in self.scan_points if sp.is_valid and sp.height > 0]
+        avg_height = np.mean(valid_heights) if valid_heights else 0.0
+        
+        # Calculate confidence based on:
+        # 1. Number of edge points
+        # 2. Consistency of radius measurements
+        # 3. Proximity to expected die diameter
+        
+        radius_std = np.std(radii)
+        diameter_error = abs(diameter - self.expected_die_diameter)
+        
+        # Confidence factors
+        edge_count_factor = min(len(self.edge_points) / 8.0, 1.0)  # Up to 8 edges
+        consistency_factor = max(0.0, 1.0 - (radius_std / avg_radius))
+        diameter_factor = max(0.0, 1.0 - (diameter_error / self.die_tolerance))
+        
+        confidence = (edge_count_factor * 0.4 + consistency_factor * 0.4 + diameter_factor * 0.2) * 100
+        
+        result = DieCenter(
+            center_x=center_x,
+            center_y=center_y,
+            diameter=diameter,
+            avg_height=avg_height,
+            confidence=confidence,
+            edge_points=self.edge_points
+        )
+        
+        logger.info(f"Die center calculated: ({center_x:.1f}, {center_y:.1f}), "
+                   f"diameter: {diameter:.1f}mm, confidence: {confidence:.1f}%")
+        
+        return result
+    
+    def write_results_to_robot(self, die_center: DieCenter):
+        """Step 6: Write calculated results to robot"""
+        logger.info("Step 6: Writing results to robot...")
+        
+        self.robot.write_die_center(die_center)
+        self.robot.set_status(2)  # Complete status
+        
+    def move_to_final_position(self, die_center: DieCenter):
+        """Step 7: Move robot 100mm above found center"""
+        logger.info("Step 7: Moving to final position...")
+        
+        try:
+            # Set final position coordinates in robot
+            self.robot._write_parameter('ds_command', 7)  # Move to final position
+            logger.info(f"Moving 100mm above center at ({die_center.center_x:.1f}, {die_center.center_y:.1f})")
+        except Exception as e:
+            logger.error(f"Failed to move to final position: {e}")
+    
+    def run_debug_scan(self):
+        """Run complete die scanning debug sequence"""
+        logger.info("=== Starting Die Scanner Debug Sequence ===")
+        
+        if not self.initialize():
+            logger.error("Initialization failed")
+            return False
+        
+        try:
+            # Step 1: Pick up sensor jig
+            self.pickup_sensor_jig()
             time.sleep(2)
             
-            # Test power on
-            test_conn.write(b'POWER_ON\\n')
-            response = test_conn.readline().decode().strip()
-            print(f"Power On Response: {response}")
+            # Step 2: Move to scan start
+            self.move_to_scan_start()
+            time.sleep(3)
             
-            # Test status
-            test_conn.write(b'STATUS\\n')
-            response = test_conn.readline().decode().strip()
-            print(f"Status Response: {response}")
+            # Step 3: Calibrate sensor
+            if not self.calibrate_sensor():
+                logger.error("Calibration failed, aborting")
+                return False
             
-            # Test reading
-            test_conn.write(b'READ\\n')
-            response = test_conn.readline().decode().strip()
-            print(f"Read Response: {response}")
+            # Step 4: Verify at 65mm
+            height = self.arduino.read_height()
+            logger.info(f"Step 4: Verified at {height:.3f}mm")
             
-            # Power off
-            test_conn.write(b'POWER_OFF\\n')
-            response = test_conn.readline().decode().strip()
-            print(f"Power Off Response: {response}")
+            # Step 5: Start continuous scanning
+            self.start_continuous_scanning()
             
-            test_conn.close()
-            logger.info("Arduino test completed successfully")
+            # Run scanning worker
+            self.continuous_scan_worker(duration=30.0)
             
+            # Stop position tracking
+            self.stop_position_tracking()
+            
+            # Step 6: Calculate and write results
+            die_center = self.calculate_final_center()
+            if die_center:
+                self.write_results_to_robot(die_center)
+                
+                # Step 7: Move to final position
+                self.move_to_final_position(die_center)
+                
+                logger.info("=== Die Scanner Debug Sequence Complete ===")
+                return True
+            else:
+                logger.error("Center calculation failed")
+                self.robot.set_status(3)  # Error status
+                return False
+                
         except Exception as e:
-            logger.error(f"Arduino test failed: {e}")
-            
-    def update_visualization_options(self, label):
-        """Update visualization options based on checkbox selection"""
-        options = {
-            'Grid': 'show_grid',
-            'Valid': 'show_valid_points', 
-            'Invalid': 'show_invalid_points',
-            'Center': 'show_center',
-            'Confidence': 'show_confidence_regions'
-        }
-        
-        if label in options:
-            current_value = getattr(self, options[label])
-            setattr(self, options[label], not current_value)
-            self.update_visualization()
-            
-    def save_data(self, event):
-        """Save current measurement data"""
-        if not self.current_measurements:
-            logger.warning("No data to save")
-            return
-            
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        filename = f"die_scan_debug_{timestamp}.json"
-        
-        save_data = {
-            'timestamp': timestamp,
-            'measurements': [asdict(p) for p in self.current_measurements],
-            'results': asdict(self.current_results) if self.current_results else None
-        }
-        
-        try:
-            with open(filename, 'w') as f:
-                json.dump(save_data, f, indent=2)
-            logger.info(f"Data saved to {filename}")
-        except Exception as e:
-            logger.error(f"Failed to save data: {e}")
-            
-    def load_data(self, event):
-        """Load measurement data from file"""
-        # This would typically open a file dialog
-        # For now, just log the capability
-        logger.info("Load data functionality - implement file dialog")
-        
-    def clear_data(self, event):
-        """Clear all current data"""
-        self.current_measurements.clear()
-        self.current_results = None
-        self.live_data_x.clear()
-        self.live_data_y.clear()
-        self.update_visualization()
-        logger.info("Data cleared")
-        
-    def show(self):
-        """Show the debug interface"""
-        plt.show()
+            logger.error(f"Debug scan failed: {e}")
+            self.robot.set_status(3)  # Error status
+            return False
+        finally:
+            self.stop_position_tracking()
+            self.arduino.disconnect()
 
-def run_debug_interface():
-    """Run the debug interface standalone"""
-    debugger = DieScannerDebugger()
+def main():
+    """Main entry point for debug scanning"""
+    scanner = ContinuousDieScanner()
     
-    # Example: Load some test data for demonstration
-    test_points = []
-    for i in range(81):  # 9x9 grid
-        x = (i % 9 - 4) * 10  # -40 to +40 mm
-        y = (i // 9 - 4) * 10
-        
-        # Simulate die measurement (center area out of range)
-        if abs(x) < 15 and abs(y) < 15:
-            height = -999  # Out of range (die center)
-            is_valid = False
+    try:
+        success = scanner.run_debug_scan()
+        if success:
+            print("Die scanning debug completed successfully")
         else:
-            height = 50 + np.random.normal(0, 2)  # Face measurement
-            is_valid = True
+            print("Die scanning debug failed")
             
-        test_points.append(MeasurementPoint(x=x, y=y, z=100, height=height, is_valid=is_valid))
-    
-    debugger.current_measurements = test_points
-    
-    # Create enhanced test results
-    debugger.current_well_result = WellCenterResult(
-        valid=True,
-        center_x=2.5, 
-        center_y=-1.2, 
-        well_diameter=24.5,
-        confidence=87.5,
-        edge_points=[p for p in test_points if p.is_valid and abs(np.sqrt(p.x**2 + p.y**2) - 12) < 3]
-    )
-    
-    # Create zone classification
-    debugger.current_zones = ZoneClassification(
-        die_face=[p for p in test_points if p.is_valid],
-        central_well=[p for p in test_points if not p.is_valid],
-        outer_edges=[],
-        other_valid=[],
-        debris=[],
-        die_face_height=49.8
-    )
-    
-    debugger.update_visualization()
-    debugger.show()
+    except KeyboardInterrupt:
+        logger.info("User interrupted scan")
+        scanner.stop_position_tracking()
+        scanner.arduino.disconnect()
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        scanner.stop_position_tracking()
+        scanner.arduino.disconnect()
 
 if __name__ == "__main__":
-    run_debug_interface()
+    main()

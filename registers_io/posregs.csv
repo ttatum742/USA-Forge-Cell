@@ -33,17 +33,17 @@
 32,frg_pick_ofs,for pulling part from forge. z=part length
 33,pointdown,tool_x offset for after picking. max I could get in roboguide was about +20deg about x
 34,,
-35,,
-36,,
-37,,
-38,,
-39,,
-40,,
-41,,
-42,,
-43,,
-44,,
-45,,
+35,sensor_jig_pickup,position for picking up sensor jig from fixture
+36,die_scan_start,sensor start position 65mm above known static point
+37,scan_point_calc,calculated scan point position (dynamic)
+38,die_center_est,estimated die center position for scanning
+39,sensor_approach,approach position for sensor operations
+40,sensor_retract,retract position after sensor measurements
+41,die_scan_offset,offset position for die scanning operations
+42,continuous_scan_start,starting position for continuous edge scan
+43,edge_scan_ref,reference position for edge detection
+44,scan_complete_pos,position after scan completion
+45,sensor_calibrate_pos,position for sensor calibration
 46,,
 47,,
 48,,
