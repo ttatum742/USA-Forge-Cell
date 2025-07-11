@@ -319,15 +319,24 @@ class ContinuousDieScanner:
         self.scanning_active = False
         self.scan_start_time = 0
         
-        # Edge detection parameters
-        self.height_threshold = 5.0  # mm drop for edge detection
+        # Enhanced edge detection parameters
+        self.base_height_threshold = 2.0  # mm base threshold for edge detection
+        self.adaptive_threshold_factor = 1.5  # Multiplier for local variance
         self.edge_confidence_threshold = 0.7
         self.expected_die_diameter = 107.95  # 4.25 inches in mm
         self.die_tolerance = 10.0  # mm tolerance for die diameter
         
+        # Multi-point edge confirmation
+        self.edge_confirmation_points = 3  # Number of consecutive points to confirm edge
+        self.recent_heights = []  # Rolling buffer for local variance calculation
+        self.max_height_buffer = 10  # Maximum points to keep for variance calculation
+        self.pending_edges = []  # Edges awaiting confirmation
+        
+        # Edge quality scoring
+        self.min_edge_quality = 0.5  # Minimum quality score to accept edge
+        
         # Background position tracking
         self.position_thread = None
-        self.height_threshold = 2.0  # mm threshold for edge detection
         
     def connect_systems(self):
         """Connect to all systems"""
@@ -420,13 +429,13 @@ class ContinuousDieScanner:
             return
         
         # Scanning parameters
-        y_scan_distance = 115.0  # 5 inches in mm
+        y_scan_distance = 110.0  # 5 inches in mm
         scan_step = 0.25  # mm
         
         # NEW SCAN PATTERN: After calibration, move +5" in Y, +5" in X
         # This becomes the starting position for Pass 1
         start_offset_x = 125.0  # X from calibration
-        start_offset_y = 100.0  # Y from calibration
+        start_offset_y = 110.0  # Y from calibration
         
         # X movements between passes
         x_move_small = 6.35   # 0.25" in mm
@@ -704,37 +713,241 @@ class ContinuousDieScanner:
         return scan_count, last_height
         
     def _detect_edges(self, x, y, height, last_height):
-        """Detect edges and add to edge points list"""
+        """Enhanced edge detection with adaptive thresholds and quality scoring"""
         # Validate that current height is valid (not -999)
         if height <= -999:
             logger.debug(f"Skipping edge detection - invalid current height: {height}")
             return None  # Return None to indicate invalid reading
-            
+        
+        # Update rolling height buffer for variance calculation
+        self.recent_heights.append(height)
+        if len(self.recent_heights) > self.max_height_buffer:
+            self.recent_heights.pop(0)
+        
         # Only proceed with edge detection if we have a valid previous height
         if last_height is not None and last_height > -999:
+            # Calculate adaptive threshold based on local height variance
+            adaptive_threshold = self._calculate_adaptive_threshold()
+            
+            # Basic height difference
             height_diff = height - last_height
             
-            # Detect falling edges (drop-offs)
-            if height_diff < -self.height_threshold:
-                edge_point = EdgePoint(
-                    x=x, y=y, edge_type='drop_off',
-                    confidence=min(abs(height_diff) / self.height_threshold, 1.0)
-                )
-                self.edge_points.append(edge_point)
-                logger.info(f"EDGE (drop): ({x:.1f}, {y:.1f}) - drop {height_diff:.1f}mm")
+            # Gradient-based edge detection (requires sufficient history)
+            gradient_strength = self._calculate_gradient_strength()
             
-            # Detect rising edges (step-ups)
-            elif height_diff > self.height_threshold:
-                edge_point = EdgePoint(
-                    x=x, y=y, edge_type='rise',
-                    confidence=min(abs(height_diff) / self.height_threshold, 1.0)
-                )
-                self.edge_points.append(edge_point)
-                logger.info(f"EDGE (rise): ({x:.1f}, {y:.1f}) - rise {height_diff:.1f}mm")
+            # Check for significant height change
+            if abs(height_diff) > adaptive_threshold:
+                # Calculate edge quality score
+                edge_quality = self._calculate_edge_quality(x, y, height, last_height, height_diff, gradient_strength)
+                
+                # Only accept high-quality edges
+                if edge_quality >= self.min_edge_quality:
+                    # Determine edge type
+                    edge_type = 'drop_off' if height_diff < 0 else 'rise'
+                    
+                    # Create edge point with enhanced confidence calculation
+                    confidence = min(edge_quality * (abs(height_diff) / adaptive_threshold), 1.0)
+                    
+                    edge_point = EdgePoint(
+                        x=x, y=y, edge_type=edge_type, confidence=confidence
+                    )
+                    
+                    # Multi-point edge confirmation (future enhancement hook)
+                    if self._confirm_edge_point(edge_point):
+                        self.edge_points.append(edge_point)
+                        logger.info(f"EDGE ({edge_type}): ({x:.1f}, {y:.1f}) - {height_diff:.1f}mm, quality={edge_quality:.2f}, threshold={adaptive_threshold:.2f}")
+                    else:
+                        logger.debug(f"Edge rejected by confirmation: ({x:.1f}, {y:.1f}) - {height_diff:.1f}mm")
+                else:
+                    logger.debug(f"Edge rejected by quality: ({x:.1f}, {y:.1f}) - quality={edge_quality:.2f} < {self.min_edge_quality}")
+            
         elif last_height is not None and last_height <= -999:
             logger.debug(f"Skipping edge detection - invalid previous height: {last_height}")
         
-        return height  # Return current height as new last_height (even if this is first valid reading)
+        return height  # Return current height as new last_height
+
+    def _calculate_adaptive_threshold(self):
+        """Calculate adaptive threshold based on local height variance"""
+        if len(self.recent_heights) < 3:
+            return self.base_height_threshold  # Use base threshold if insufficient data
+        
+        # Calculate local variance
+        heights_array = np.array(self.recent_heights)
+        local_variance = np.var(heights_array)
+        local_std = np.sqrt(local_variance)
+        
+        # Adaptive threshold: base + factor * standard deviation
+        adaptive_threshold = self.base_height_threshold + (self.adaptive_threshold_factor * local_std)
+        
+        # Ensure threshold doesn't get too small or too large
+        min_threshold = self.base_height_threshold * 0.5
+        max_threshold = self.base_height_threshold * 3.0
+        adaptive_threshold = max(min_threshold, min(max_threshold, adaptive_threshold))
+        
+        return adaptive_threshold
+    
+    def _calculate_gradient_strength(self):
+        """Calculate gradient strength over recent height measurements"""
+        if len(self.recent_heights) < 3:
+            return 0.0
+        
+        # Calculate gradient using finite differences
+        heights = np.array(self.recent_heights[-3:])  # Use last 3 points
+        gradient = np.gradient(heights)
+        
+        # Return the strength of the gradient (magnitude)
+        return np.mean(np.abs(gradient))
+    
+    def _calculate_edge_quality(self, x, y, height, last_height, height_diff, gradient_strength):
+        """Calculate edge quality score based on multiple factors"""
+        quality = 0.0
+        
+        # Factor 1: Height difference magnitude (normalized)
+        height_factor = min(abs(height_diff) / (self.base_height_threshold * 2), 1.0)
+        quality += height_factor * 0.4  # 40% weight
+        
+        # Factor 2: Gradient strength (indicates sharp vs gradual change)
+        gradient_factor = min(gradient_strength / 2.0, 1.0)
+        quality += gradient_factor * 0.3  # 30% weight
+        
+        # Factor 3: Consistency with expected die geometry and circular pattern
+        estimated_center_x, estimated_center_y = self._estimate_dynamic_center()
+        distance_from_center = np.sqrt((x - estimated_center_x)**2 + (y - estimated_center_y)**2)
+        expected_radius = self.expected_die_diameter / 2
+        
+        # Quality decreases if too far from expected radius
+        radius_error = abs(distance_from_center - expected_radius)
+        radius_factor = max(0, 1.0 - (radius_error / (expected_radius * 0.5)))
+        
+        # Circular consistency: check if edge direction is consistent with circle
+        circular_consistency = self._check_circular_consistency(x, y, estimated_center_x, estimated_center_y, height_diff)
+        
+        # Combine radius and circular consistency
+        geometry_factor = (radius_factor * 0.7) + (circular_consistency * 0.3)
+        quality += geometry_factor * 0.2  # 20% weight
+        
+        # Factor 4: Noise assessment based on recent height stability
+        if len(self.recent_heights) >= 5:
+            recent_std = np.std(self.recent_heights[-5:])
+            noise_factor = max(0, 1.0 - (recent_std / 1.0))  # Lower quality if noisy
+            quality += noise_factor * 0.1  # 10% weight
+        else:
+            quality += 0.05  # Neutral contribution if insufficient data
+        
+        return min(quality, 1.0)
+    
+    def _confirm_edge_point(self, edge_point):
+        """Multi-point edge confirmation - require consistent edges in nearby locations"""
+        # Add current edge to pending confirmation list
+        edge_data = {
+            'point': edge_point,
+            'timestamp': time.time(),
+            'confirmed_count': 1
+        }
+        
+        # Check for nearby pending edges of same type
+        confirmation_distance = 5.0  # mm - max distance to consider "nearby"
+        confirmed = False
+        
+        for pending in self.pending_edges:
+            # Calculate distance between edge points
+            distance = np.sqrt(
+                (edge_point.x - pending['point'].x)**2 + 
+                (edge_point.y - pending['point'].y)**2
+            )
+            
+            # If nearby and same edge type, increment confirmation count
+            if (distance <= confirmation_distance and 
+                edge_point.edge_type == pending['point'].edge_type):
+                pending['confirmed_count'] += 1
+                
+                # If sufficient confirmations, accept the edge
+                if pending['confirmed_count'] >= self.edge_confirmation_points:
+                    confirmed = True
+                    # Update the confirmed edge location to average of confirmations
+                    edge_point.x = (edge_point.x + pending['point'].x) / 2
+                    edge_point.y = (edge_point.y + pending['point'].y) / 2
+                    edge_point.confidence = max(edge_point.confidence, pending['point'].confidence)
+                    
+                    # Remove confirmed edge from pending list
+                    self.pending_edges.remove(pending)
+                    break
+        
+        # If not confirmed yet, add to pending list
+        if not confirmed:
+            self.pending_edges.append(edge_data)
+            
+            # Clean up old pending edges (older than 10 seconds)
+            current_time = time.time()
+            self.pending_edges = [p for p in self.pending_edges 
+                                if current_time - p['timestamp'] < 10.0]
+            
+            # For initial implementation, also accept high-confidence edges immediately
+            if edge_point.confidence > 0.8:
+                confirmed = True
+                logger.debug(f"High-confidence edge accepted immediately: confidence={edge_point.confidence:.2f}")
+        
+        return confirmed
+
+    def _estimate_dynamic_center(self):
+        """Estimate die center dynamically based on current edge points"""
+        if len(self.edge_points) < 3:
+            # Use known center as fallback for initial estimation
+            return 398.0, 809.0
+        
+        # Use simple centroid of edge points as rough center estimate
+        edge_coords = np.array([[ep.x, ep.y] for ep in self.edge_points])
+        center_x = np.mean(edge_coords[:, 0])
+        center_y = np.mean(edge_coords[:, 1])
+        
+        return center_x, center_y
+    
+    def _check_circular_consistency(self, x, y, center_x, center_y, height_diff):
+        """Check if edge direction is consistent with circular die pattern"""
+        if len(self.edge_points) < 2:
+            return 0.5  # Neutral score if insufficient data
+        
+        # Calculate vector from center to current point
+        center_to_point = np.array([x - center_x, y - center_y])
+        
+        # For a circular die, edges should generally point radially outward (for drop-offs)
+        # or inward (for rises), depending on whether we're scanning from inside or outside
+        
+        # Calculate expected edge direction based on scanning pattern
+        # Since we're scanning with linear passes, the edge direction should be roughly
+        # perpendicular to the scanning direction at the edge location
+        
+        # For circular consistency, edges should form a roughly circular pattern
+        # Check if the current edge is consistent with nearby edges
+        consistency_score = 0.5  # Start with neutral
+        
+        if len(self.edge_points) >= 3:
+            # Calculate angle from center to current point
+            current_angle = np.arctan2(y - center_y, x - center_x)
+            
+            # Check consistency with nearby edge points
+            nearby_edges = 0
+            consistent_edges = 0
+            
+            for edge in self.edge_points[-5:]:  # Check last 5 edges
+                edge_angle = np.arctan2(edge.y - center_y, edge.x - center_x)
+                angle_diff = abs(current_angle - edge_angle)
+                
+                # Normalize angle difference to [0, π]
+                if angle_diff > np.pi:
+                    angle_diff = 2 * np.pi - angle_diff
+                
+                # If edges are nearby (within 30 degrees), check consistency
+                if angle_diff < np.pi / 6:  # 30 degrees
+                    nearby_edges += 1
+                    # Edges should have similar type for circular consistency
+                    if edge.edge_type == ('drop_off' if height_diff < 0 else 'rise'):
+                        consistent_edges += 1
+            
+            if nearby_edges > 0:
+                consistency_score = consistent_edges / nearby_edges
+        
+        return consistency_score
 
     def _log_scan_completion_stats(self, scan_count):
         """Log comprehensive scan completion statistics including invalid readings"""
