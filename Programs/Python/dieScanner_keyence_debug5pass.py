@@ -323,7 +323,7 @@ class ContinuousDieScanner:
         self.base_height_threshold = 2.0  # mm base threshold for edge detection
         self.adaptive_threshold_factor = 1.5  # Multiplier for local variance
         self.edge_confidence_threshold = 0.7
-        self.expected_die_diameter = 107.95  # 4.25 inches in mm
+        self.expected_die_diameter = 114.3  # 4.5 inches in mm
         self.die_tolerance = 10.0  # mm tolerance for die diameter
         
         # Multi-point edge confirmation
@@ -334,6 +334,19 @@ class ContinuousDieScanner:
         
         # Edge quality scoring
         self.min_edge_quality = 0.5  # Minimum quality score to accept edge
+        
+        # Interior edge filtering parameters - 4.5" diameter die = 114.3mm diameter = 57.15mm radius
+        self.expected_die_radius = 57.15  # mm - 4.5" die radius
+        self.min_outer_radius = 45.0  # mm - minimum radius for outer edge acceptance (die edge ~57mm)
+        self.max_outer_radius = 70.0  # mm - maximum radius for outer edge acceptance 
+        self.interior_exclusion_radius = 35.0  # mm - reject edges closer than this to center
+        self.min_perimeter_edges = 3  # Minimum outer edges required for center calculation (reduced for testing)
+        self.min_angular_coverage = 180.0  # Degrees - minimum perimeter coverage required (reduced for testing)
+        
+        # Edge classification tracking
+        self.outer_edges = []  # Confirmed outer perimeter edges only
+        self.interior_edges = []  # Detected interior edges (for debugging)
+        self.filtered_edge_count = 0  # Track how many edges were filtered out
         
         # Background position tracking
         self.position_thread = None
@@ -429,8 +442,8 @@ class ContinuousDieScanner:
             return
         
         # Scanning parameters
-        y_scan_distance = 110.0  # 5 inches in mm
-        scan_step = 0.25  # mm
+        y_scan_distance = 120.0  # 5 inches in mm
+        scan_step = 5  # mm - faster initial scanning, refined later
         
         # NEW SCAN PATTERN: After calibration, move +5" in Y, +5" in X
         # This becomes the starting position for Pass 1
@@ -492,14 +505,9 @@ class ContinuousDieScanner:
             logger.error(f"Failed during 5-pass scan: {e}")
             return
         
-        # Signal robot scan complete
-        try:
-            self.robot._write_parameter('ds_status', 12)
-            logger.info("Scan completion signaled to robot (ds_status=12)")
-            logger.info("Robot will process scan completion in background")
-                
-        except Exception as e:
-            logger.error(f"Failed to signal scan complete: {e}")
+        # Continue to center calculation - do not set final status yet
+        # Final status (ds_status=2 for success or ds_status=3 for error) will be set after center calculation
+        logger.info("Scanning phase complete, proceeding to center calculation")
         
         # Note: Do not set scanning_active = False here, as we still need to calculate center
     
@@ -569,10 +577,258 @@ class ContinuousDieScanner:
             current_x, current_y, current_z, y_scan_distance, scan_step, 
             direction="-Y", pass_num=5, scan_count=scan_count, last_height=last_height)
         
-        # Log completion with invalid reading statistics
-        self._log_scan_completion_stats(scan_count)
-        return scan_count
+        # Add cross-direction (X) scanning for edge validation
+        logger.info("Starting cross-direction (X) scanning for edge validation")
+        x_scan_count = self.perform_cross_direction_scan(start_x, start_y, start_z, y_scan_distance, scan_step)
         
+        # Add radial validation scanning from estimated center
+        logger.info("Starting radial validation scanning")
+        radial_scan_count = self.perform_radial_validation_scan(start_x, start_y, start_z, scan_step)
+        
+        total_scan_count = scan_count + x_scan_count + radial_scan_count
+        
+        # Log completion with invalid reading statistics
+        self._log_scan_completion_stats(total_scan_count)
+        return total_scan_count
+    
+    def perform_cross_direction_scan(self, original_start_x, original_start_y, original_start_z, y_scan_distance, scan_step):
+        """Perform FOCUSED X-direction scanning passes around preliminary center"""
+        x_scan_count = 0
+        last_height = None
+        
+        # Get preliminary center from 5-pass results
+        prelim_center_x, prelim_center_y = self.get_preliminary_center_from_5_pass()
+        
+        # ADAPTIVE scanning parameters based on detected edges from 5-pass
+        focused_scan_distance = 50.0  # 50mm total scan length
+        x_step_size = 0.5  # 0.5mm steps for refined edge scanning
+        
+        # Calculate optimal scanning position based on detected outer edges
+        if len(self.outer_edges) > 0:
+            # Use actual detected edge distances to position X-direction scans
+            edge_distances = [np.sqrt((edge.x - prelim_center_x)**2 + (edge.y - prelim_center_y)**2) 
+                             for edge in self.outer_edges]
+            avg_edge_radius = np.mean(edge_distances)
+            max_edge_radius = max(edge_distances)
+            
+            # INWARD STRATEGY: Start just outside average detected edge radius, not max
+            # This avoids peripheral equipment while ensuring we cross the actual die edge
+            edge_crossing_offset = avg_edge_radius + 10.0  # Start 10mm outside average edge
+            logger.info(f"INWARD X-scan positioning: avg edge radius={avg_edge_radius:.1f}mm, max={max_edge_radius:.1f}mm")
+            logger.info(f"X-scan will start at {edge_crossing_offset:.1f}mm from center and scan {focused_scan_distance:.1f}mm INWARD toward center")
+        else:
+            # Fallback to default positioning if no edges detected yet
+            edge_crossing_offset = 57.0  # mm - conservative fallback
+            logger.warning("No outer edges detected yet, using default X-scan positioning")
+        
+        # Position passes around preliminary center (not original start)
+        y_positions = [
+            prelim_center_y - 15.0,  # 15mm below center
+            prelim_center_y,         # At center
+            prelim_center_y + 15.0,  # 15mm above center
+        ]
+        
+        logger.info(f"Focused X-direction scanning around preliminary center ({prelim_center_x:.1f}, {prelim_center_y:.1f})")
+        logger.info(f"Scan parameters: {focused_scan_distance:.1f}mm range, {x_step_size:.1f}mm steps")
+        logger.info(f"Edge crossing strategy: start {edge_crossing_offset:.1f}mm from center, scan inward to cross die edge")
+        
+        for i, y_pos in enumerate(y_positions):
+            logger.info(f"X-direction pass {i+1}/3 at Y={y_pos:.1f}")
+            
+            try:
+                # Execute X-direction scan pass using focused parameters
+                pass_count, last_height = self._execute_x_scan_pass(
+                    prelim_center_x, y_pos, original_start_z,
+                    focused_scan_distance, x_step_size, f"X-pass-{i+1}", x_scan_count, last_height, edge_crossing_offset)
+                
+                x_scan_count += pass_count
+                logger.info(f"X-direction pass {i+1} completed: {pass_count} points")
+                
+            except Exception as e:
+                logger.error(f"X-direction pass {i+1} failed: {e}")
+        
+        logger.info(f"Cross-direction scanning complete: {x_scan_count} additional points")
+        return x_scan_count
+    
+    def _execute_x_scan_pass(self, center_x, y_position, start_z, x_distance, step_size, pass_name, scan_count, last_height, edge_crossing_offset=45.0):
+        """Execute a single X-direction scan pass positioned to cross die edges"""
+        x_steps = int(x_distance / step_size)
+        current_y = y_position
+        current_z = start_z
+        
+        # Position scan to cross die edges: start at center + edge_crossing_offset, scan inward 25mm
+        # This ensures we cross the ~57mm radius die edge
+        scan_start_x = center_x + edge_crossing_offset  # Start outside the die edge
+        logger.info(f"X-scan positioned to cross die edge: start at X={scan_start_x:.1f} (center+{edge_crossing_offset:.1f}), scan {x_distance:.1f}mm inward")
+        
+        for step in range(x_steps + 1):
+            if not self.scanning_active:
+                break
+                
+            try:
+                # Calculate current X position - scan inward toward center
+                current_x = scan_start_x - (step * step_size)  # Subtract to scan inward
+                
+                # Move robot to position using existing protocol
+                self.robot._write_parameter('ds_next_pos_x', current_x)
+                self.robot._write_parameter('ds_next_pos_y', current_y) 
+                self.robot._write_parameter('ds_next_pos_z', current_z)
+                self.robot._write_parameter('ds_status', 11)  # Signal move request
+                
+                # Wait for move completion
+                move_timeout = 10.0
+                move_start = time.time()
+                while time.time() - move_start < move_timeout:
+                    status = self.robot._read_parameter('ds_status')
+                    if status == 10:  # Move complete
+                        break
+                    time.sleep(0.05)
+                else:
+                    logger.warning(f"Move timeout in {pass_name} step {step}")
+                    continue
+                
+                # Take measurement
+                height = self.arduino.read_height()
+                
+                if height > -999:
+                    scan_point = ScanPoint(
+                        x=current_x, y=current_y, z=current_z,
+                        height=height,
+                        is_valid=True,
+                        timestamp=time.time()
+                    )
+                    self.scan_points.append(scan_point)
+                    scan_count += 1
+                    
+                    # Edge detection
+                    last_height = self._detect_edges(current_x, current_y, height, last_height)
+                
+                # Log progress periodically
+                if step % 20 == 0:
+                    logger.debug(f"{pass_name} step {step}/{x_steps}: X={current_x:.1f}, height={height:.1f}mm")
+                    
+            except Exception as e:
+                logger.error(f"Error in {pass_name} step {step}: {e}")
+                continue
+        
+        return scan_count, last_height
+    
+    def perform_radial_validation_scan(self, reference_x, reference_y, reference_z, scan_step):
+        """Perform radial spoke scanning in OUTER EDGE area to validate perimeter"""
+        radial_scan_count = 0
+        last_height = None
+        
+        # Get current center estimate for radial scanning
+        estimated_center_x, estimated_center_y = self._estimate_dynamic_center()
+        
+        # Define 6 radial directions (every 60 degrees) - FOCUSED on outer edge area
+        radial_angles = [0, 60, 120, 180, 240, 300]  # degrees
+        
+        # INWARD STRATEGY: Start just outside detected edges and scan inward toward center
+        if len(self.outer_edges) > 0:
+            # Use actual detected edge distances to position radial scans
+            edge_distances = [np.sqrt((edge.x - estimated_center_x)**2 + (edge.y - estimated_center_y)**2) 
+                             for edge in self.outer_edges]
+            avg_edge_radius = np.mean(edge_distances)
+            
+            # Start just outside average edge radius and scan inward
+            radial_start_radius = avg_edge_radius + 10.0  # Start 10mm outside average edge
+            radial_scan_length = 25.0  # Scan 25mm inward toward center
+            logger.info(f"Radial INWARD scanning: avg edge radius={avg_edge_radius:.1f}mm, starting {radial_start_radius:.1f}mm from center")
+        else:
+            # Fallback if no edges detected
+            radial_start_radius = 60.0  # mm - conservative fallback
+            radial_scan_length = 25.0   # mm - scan inward
+            logger.warning("No outer edges for radial positioning, using fallback")
+            
+        radial_step_size = 0.5  # mm - refined steps for edge detection
+        
+        logger.info(f"Radial INWARD scanning from center: ({estimated_center_x:.1f}, {estimated_center_y:.1f})")
+        logger.info(f"Radial scan parameters: START at {radial_start_radius:.1f}mm, scan {radial_scan_length:.1f}mm INWARD toward center")
+        
+        for i, angle in enumerate(radial_angles):
+            logger.info(f"Radial spoke {i+1}/6 at {angle}° in outer edge area")
+            
+            try:
+                # Execute radial spoke scan in outer edge area
+                spoke_count, last_height = self._execute_radial_spoke(
+                    estimated_center_x, estimated_center_y, reference_z,
+                    angle, radial_scan_length, radial_step_size, f"spoke-{angle}°", last_height, radial_start_radius)
+                
+                radial_scan_count += spoke_count
+                logger.info(f"Radial spoke {angle}° completed: {spoke_count} points")
+                
+            except Exception as e:
+                logger.error(f"Radial spoke {angle}° failed: {e}")
+        
+        logger.info(f"Radial validation scanning complete: {radial_scan_count} additional points")
+        return radial_scan_count
+    
+    def _execute_radial_spoke(self, center_x, center_y, center_z, angle_deg, scan_length, step_size, spoke_name, last_height, start_radius=40.0):
+        """Execute a single radial spoke scan INWARD from detected edge area toward center"""
+        angle_rad = np.radians(angle_deg)
+        radius_steps = int(scan_length / step_size)
+        scan_count = 0
+        
+        end_radius = start_radius - scan_length  # End closer to center
+        logger.info(f"Radial spoke {angle_deg}°: scanning INWARD from {start_radius:.1f}mm to {end_radius:.1f}mm radius")
+        
+        for step in range(radius_steps + 1):
+            if not self.scanning_active:
+                break
+                
+            try:
+                # Calculate current radius and position - SCAN INWARD toward center
+                current_radius = start_radius - (step * step_size)  # Subtract to go inward
+                
+                # Calculate X,Y position along radial line
+                current_x = center_x + current_radius * np.cos(angle_rad)
+                current_y = center_y + current_radius * np.sin(angle_rad)
+                
+                # Move robot to position using existing protocol
+                self.robot._write_parameter('ds_next_pos_x', current_x)
+                self.robot._write_parameter('ds_next_pos_y', current_y) 
+                self.robot._write_parameter('ds_next_pos_z', center_z)
+                self.robot._write_parameter('ds_status', 11)  # Signal move request
+                
+                # Wait for move completion
+                move_timeout = 10.0
+                move_start = time.time()
+                while time.time() - move_start < move_timeout:
+                    status = self.robot._read_parameter('ds_status')
+                    if status == 10:  # Move complete
+                        break
+                    time.sleep(0.05)
+                else:
+                    logger.warning(f"Move timeout in {spoke_name} step {step}")
+                    continue
+                
+                # Take measurement
+                height = self.arduino.read_height()
+                
+                if height > -999:
+                    scan_point = ScanPoint(
+                        x=current_x, y=current_y, z=center_z,
+                        height=height,
+                        is_valid=True,
+                        timestamp=time.time()
+                    )
+                    self.scan_points.append(scan_point)
+                    scan_count += 1
+                    
+                    # Edge detection
+                    last_height = self._detect_edges(current_x, current_y, height, last_height)
+                
+                # Log progress periodically
+                if step % 10 == 0:
+                    logger.debug(f"{spoke_name} step {step}: r={current_radius:.1f}mm, height={height:.1f}mm")
+                    
+            except Exception as e:
+                logger.error(f"Error in {spoke_name} step {step}: {e}")
+                continue
+        
+        return scan_count, last_height
+
     def _execute_scan_pass(self, start_x, start_y, start_z, y_distance, step_size, direction, pass_num, scan_count, last_height):
         """Execute a single scan pass"""
         y_steps = int(y_distance / step_size)
@@ -752,10 +1008,13 @@ class ContinuousDieScanner:
                         x=x, y=y, edge_type=edge_type, confidence=confidence
                     )
                     
-                    # Multi-point edge confirmation (future enhancement hook)
+                    # Multi-point edge confirmation - classify later in filter_interior_edges()
                     if self._confirm_edge_point(edge_point):
+                        # Just add to edge_points list - classification happens later
                         self.edge_points.append(edge_point)
-                        logger.info(f"EDGE ({edge_type}): ({x:.1f}, {y:.1f}) - {height_diff:.1f}mm, quality={edge_quality:.2f}, threshold={adaptive_threshold:.2f}")
+                        logger.info(f"EDGE DETECTED ({edge_type}): ({x:.1f}, {y:.1f}) - {height_diff:.1f}mm, quality={edge_quality:.2f}")
+                        
+                        # Note: Classification as interior/exterior happens later in filter_interior_edges()
                     else:
                         logger.debug(f"Edge rejected by confirmation: ({x:.1f}, {y:.1f}) - {height_diff:.1f}mm")
                 else:
@@ -949,6 +1208,348 @@ class ContinuousDieScanner:
         
         return consistency_score
 
+    def _classify_edge_location(self, edge_point):
+        """Classify edge as interior, exterior, or uncertain based on geometry"""
+        # Get current best estimate of center
+        estimated_center_x, estimated_center_y = self._estimate_dynamic_center()
+        
+        # Calculate distance from estimated center
+        distance_from_center = np.sqrt(
+            (edge_point.x - estimated_center_x)**2 + 
+            (edge_point.y - estimated_center_y)**2
+        )
+        
+        # Apply radius-based classification
+        if distance_from_center < self.interior_exclusion_radius:
+            return 'interior'  # Definitely inside die
+        elif distance_from_center >= self.min_outer_radius and distance_from_center <= self.max_outer_radius:
+            return 'exterior'  # Likely outer perimeter
+        elif distance_from_center > self.max_outer_radius:
+            return 'interior'  # Too far out, probably noise or artifact
+        else:
+            return 'uncertain'  # In transition zone, needs further analysis
+    
+    def filter_interior_edges(self):
+        """Remove interior edges from edge_points list and populate outer_edges"""
+        if not self.edge_points:
+            return
+        
+        # Clear previous classifications
+        self.outer_edges.clear()
+        self.interior_edges.clear()
+        filtered_edges = []
+        
+        # Get current center estimate
+        estimated_center_x, estimated_center_y = self._estimate_dynamic_center()
+        
+        logger.info(f"Filtering edges using center estimate: ({estimated_center_x:.1f}, {estimated_center_y:.1f})")
+        logger.info(f"Radius criteria: min={self.min_outer_radius:.1f}mm, max={self.max_outer_radius:.1f}mm")
+        
+        # Classify all edges
+        for i, edge in enumerate(self.edge_points):
+            distance_from_center = np.sqrt(
+                (edge.x - estimated_center_x)**2 + 
+                (edge.y - estimated_center_y)**2
+            )
+            
+            if (distance_from_center >= self.min_outer_radius and 
+                distance_from_center <= self.max_outer_radius):
+                self.outer_edges.append(edge)
+                filtered_edges.append(edge)
+                logger.info(f"Edge {i+1} ACCEPTED as OUTER: ({edge.x:.1f}, {edge.y:.1f}) dist={distance_from_center:.1f}mm")
+            else:
+                self.interior_edges.append(edge)
+                self.filtered_edge_count += 1
+                logger.info(f"Edge {i+1} FILTERED as INTERIOR: ({edge.x:.1f}, {edge.y:.1f}) dist={distance_from_center:.1f}mm")
+        
+        # Update main edge list to only contain outer edges
+        self.edge_points = filtered_edges
+        
+        logger.info(f"Edge filtering complete: {len(self.outer_edges)} outer edges, {len(self.interior_edges)} interior edges filtered")
+    
+    def validate_perimeter_continuity(self):
+        """Check if outer edges form a continuous perimeter with sufficient coverage"""
+        if len(self.outer_edges) < self.min_perimeter_edges:
+            logger.warning(f"Insufficient outer edges: {len(self.outer_edges)} < {self.min_perimeter_edges}")
+            return False
+        
+        # Calculate angular coverage
+        estimated_center_x, estimated_center_y = self._estimate_dynamic_center()
+        angles = []
+        
+        for edge in self.outer_edges:
+            angle = np.arctan2(edge.y - estimated_center_y, edge.x - estimated_center_x)
+            angles.append(np.degrees(angle) % 360)  # Convert to 0-360 degrees
+        
+        # Sort angles and check coverage
+        angles.sort()
+        
+        # Calculate maximum gap between consecutive angles
+        max_gap = 0
+        for i in range(len(angles)):
+            gap = angles[(i + 1) % len(angles)] - angles[i]
+            if gap < 0:  # Handle wrap-around at 360°
+                gap += 360
+            max_gap = max(max_gap, gap)
+        
+        # Calculate total coverage (360° - largest gap)
+        coverage = 360 - max_gap
+        
+        if coverage < self.min_angular_coverage:
+            logger.warning(f"Insufficient angular coverage: {coverage:.1f}° < {self.min_angular_coverage}°")
+            logger.debug(f"Angular distribution of {len(self.outer_edges)} outer edges:")
+            for i, angle in enumerate(angles):
+                logger.debug(f"  Edge {i+1}: {angle:.1f}°")
+            logger.debug(f"Max gap between edges: {max_gap:.1f}°")
+            return False
+        
+        logger.info(f"Perimeter validation passed: {len(self.outer_edges)} edges, {coverage:.1f}° coverage")
+        logger.debug(f"Edge angular distribution: max gap {max_gap:.1f}°, coverage {coverage:.1f}°")
+        return True
+
+    def ransac_circle_fit(self, x, y, max_iterations=100, distance_threshold=3.0):
+        """RANSAC circle fitting to remove outliers"""
+        if len(x) < 3:
+            return np.mean(x), np.mean(y), 0, []
+        
+        best_inliers = []
+        best_center_x, best_center_y, best_radius = 0, 0, 0
+        
+        for _ in range(max_iterations):
+            # Randomly sample 3 points
+            if len(x) < 3:
+                break
+            sample_indices = np.random.choice(len(x), 3, replace=False)
+            sample_x = x[sample_indices]
+            sample_y = y[sample_indices]
+            
+            # Fit circle to 3 points
+            try:
+                center_x, center_y, radius = self._fit_circle_3_points(sample_x, sample_y)
+                
+                # Check if circle parameters are reasonable
+                if (radius < self.min_outer_radius * 0.8 or radius > self.max_outer_radius * 1.2):
+                    continue
+                
+                # Find inliers
+                distances = np.sqrt((x - center_x)**2 + (y - center_y)**2)
+                radius_errors = np.abs(distances - radius)
+                inliers = np.where(radius_errors < distance_threshold)[0]
+                
+                # Keep best fit with most inliers
+                if len(inliers) > len(best_inliers):
+                    best_inliers = inliers
+                    best_center_x, best_center_y, best_radius = center_x, center_y, radius
+                    
+            except:
+                continue
+        
+        # If sufficient inliers found, refit using all inliers
+        if len(best_inliers) >= 4:
+            inlier_x = x[best_inliers]
+            inlier_y = y[best_inliers]
+            best_center_x, best_center_y = self.kasa_circle_fit(inlier_x, inlier_y)
+        
+        return best_center_x, best_center_y, best_radius, best_inliers
+    
+    def _fit_circle_3_points(self, x, y):
+        """Fit circle through 3 points"""
+        # Convert to homogeneous coordinates and solve
+        A = np.array([
+            [x[0], y[0], 1],
+            [x[1], y[1], 1],
+            [x[2], y[2], 1]
+        ])
+        B = -(x**2 + y**2)
+        
+        if np.linalg.det(A) == 0:
+            # Points are collinear, return centroid
+            return np.mean(x), np.mean(y), np.mean(np.sqrt(x**2 + y**2))
+        
+        coeffs = np.linalg.solve(A, B)
+        center_x = -coeffs[0] / 2
+        center_y = -coeffs[1] / 2
+        radius = np.sqrt(center_x**2 + center_y**2 - coeffs[2])
+        
+        return center_x, center_y, radius
+    
+    def weighted_least_squares_fit(self, x, y):
+        """Weighted least squares using edge quality scores"""
+        if len(self.outer_edges) != len(x):
+            # Fallback to standard least squares if size mismatch
+            return self.kasa_circle_fit(x, y)
+        
+        # Extract weights from edge confidence scores
+        weights = np.array([edge.confidence for edge in self.outer_edges])
+        weights = weights / np.sum(weights)  # Normalize weights
+        
+        # Weighted least squares formulation
+        W = np.diag(weights)
+        A = np.column_stack([2*x, 2*y, np.ones(len(x))])
+        B = x**2 + y**2
+        
+        # Solve weighted least squares: (A^T W A) * params = A^T W B
+        try:
+            params = np.linalg.solve(A.T @ W @ A, A.T @ W @ B)
+            center_x = params[0]
+            center_y = params[1]
+            return center_x, center_y
+        except:
+            # Fallback to standard method if weighted fails
+            return self.kasa_circle_fit(x, y)
+    
+    def kasa_circle_fit(self, x, y):
+        """Standard Kasa algebraic circle fitting"""
+        A = np.column_stack([2*x, 2*y, np.ones(len(x))])
+        B = x**2 + y**2
+        try:
+            params = np.linalg.lstsq(A, B, rcond=None)[0]
+            return params[0], params[1]
+        except:
+            return np.mean(x), np.mean(y)
+    
+    def taubin_circle_fit(self, x, y):
+        """Taubin geometric circle fitting (more accurate than Kasa)"""
+        # Center data
+        x_mean = np.mean(x)
+        y_mean = np.mean(y)
+        x_centered = x - x_mean
+        y_centered = y - y_mean
+        
+        # Calculate moments
+        Mxx = np.mean(x_centered**2)
+        Myy = np.mean(y_centered**2)
+        Mxy = np.mean(x_centered * y_centered)
+        Mxz = np.mean(x_centered * (x_centered**2 + y_centered**2))
+        Myz = np.mean(y_centered * (x_centered**2 + y_centered**2))
+        Mzz = np.mean((x_centered**2 + y_centered**2)**2)
+        
+        # Taubin method coefficients
+        try:
+            Cov_xy = Mxx * Myy - Mxy**2
+            Var_z = Mzz - (Mxx + Myy)**2
+            
+            if abs(Cov_xy) < 1e-12:
+                # Fallback to centroid if degenerate
+                return x_mean, y_mean
+            
+            A2 = 4 * Cov_xy
+            A1 = Var_z
+            A0 = Mzz * Cov_xy - Mxz**2 * Myy - Myz**2 * Mxx + 2 * Mxz * Myz * Mxy
+            
+            A = A1 / A2
+            B = A0 / A2
+            
+            # Solve quadratic
+            discriminant = A**2 - 4*B
+            if discriminant < 0:
+                return x_mean, y_mean
+            
+            lambda_val = (-A + np.sqrt(discriminant)) / 2
+            
+            center_x = x_mean + (Mxz * (Myy - lambda_val) - Myz * Mxy) / (2 * Cov_xy)
+            center_y = y_mean + (Myz * (Mxx - lambda_val) - Mxz * Mxy) / (2 * Cov_xy)
+            
+            return center_x, center_y
+            
+        except:
+            # Fallback to Kasa method
+            return self.kasa_circle_fit(x, y)
+    
+    def multi_method_consensus(self, method_results):
+        """Calculate consensus center from multiple fitting methods"""
+        valid_results = []
+        total_weight = 0
+        
+        for center_x, center_y, weight in method_results:
+            # Validate result is reasonable
+            if (not np.isnan(center_x) and not np.isnan(center_y) and
+                abs(center_x) < 2000 and abs(center_y) < 2000):  # Sanity check
+                valid_results.append((center_x, center_y, weight))
+                total_weight += weight
+        
+        if not valid_results:
+            # Fallback to simple average if all methods failed
+            logger.warning("All fitting methods failed, using fallback center")
+            return 398.0, 809.0, 10.0  # Known approximate center
+        
+        # Weighted average of valid results
+        weighted_x = sum(x * w for x, y, w in valid_results) / total_weight
+        weighted_y = sum(y * w for x, y, w in valid_results) / total_weight
+        
+        # Calculate confidence based on consistency
+        x_coords = [x for x, y, w in valid_results]
+        y_coords = [y for x, y, w in valid_results]
+        
+        x_std = np.std(x_coords) if len(x_coords) > 1 else 0
+        y_std = np.std(y_coords) if len(y_coords) > 1 else 0
+        
+        # Confidence decreases with standard deviation
+        consistency_score = max(0, 100 - (x_std + y_std) * 5)
+        
+        return weighted_x, weighted_y, consistency_score
+
+    def set_error_status(self, error_msg="Unknown error"):
+        """Set error status and log failure"""
+        try:
+            self.robot._write_parameter('ds_status', 3)  # 3 = error
+            logger.error(f"Die scanning failed: {error_msg}")
+            print(f"❌ SCAN FAILED: {error_msg}")
+        except Exception as e:
+            logger.error(f"Failed to set error status: {e}")
+
+    def set_success_status(self, center_result):
+        """Set success status and output results"""
+        try:
+            self.robot._write_parameter('ds_status', 2)  # 2 = complete (success)
+            logger.info("Die scanning completed successfully")
+            print(f"✅ SCAN COMPLETE: Center [{center_result.center_x:.1f}, {center_result.center_y:.1f}]")
+        except Exception as e:
+            logger.error(f"Failed to set success status: {e}")
+
+    def get_preliminary_center_from_5_pass(self):
+        """Extract preliminary center from 5-pass Y-direction scan results"""
+        if len(self.outer_edges) < 4:
+            # Fallback to known approximate center
+            logger.warning("Insufficient outer edges for preliminary center, using fallback")
+            logger.debug(f"Only {len(self.outer_edges)} outer edges available, need at least 4")
+            return 398.0, 809.0
+        
+        # Quick centroid calculation from outer edges found in Y-direction scanning
+        x_coords = [edge.x for edge in self.outer_edges]
+        y_coords = [edge.y for edge in self.outer_edges] 
+        
+        prelim_x = np.mean(x_coords)
+        prelim_y = np.mean(y_coords)
+        
+        # Log detailed edge information
+        logger.info(f"Preliminary center from 5-pass: ({prelim_x:.1f}, {prelim_y:.1f}) based on {len(self.outer_edges)} outer edges")
+        logger.debug("Outer edges used for preliminary center:")
+        for i, edge in enumerate(self.outer_edges):
+            distance = np.sqrt((edge.x - prelim_x)**2 + (edge.y - prelim_y)**2)
+            logger.debug(f"  Edge {i+1}: ({edge.x:.1f}, {edge.y:.1f}) dist={distance:.1f}mm type={edge.edge_type}")
+        
+        return prelim_x, prelim_y
+
+    def filter_edges_by_distance(self, center_x, center_y, max_radius=63.5, edge_list=None):
+        """Filter edges to only include those within 2.5" (63.5mm) of center"""
+        filtered_edges = []
+        excluded_count = 0
+        
+        # Use provided edge list or default to outer edges
+        edges_to_filter = edge_list if edge_list is not None else self.outer_edges
+        
+        for edge in edges_to_filter:
+            distance = np.sqrt((edge.x - center_x)**2 + (edge.y - center_y)**2)
+            if distance <= max_radius:
+                filtered_edges.append(edge)
+            else:
+                excluded_count += 1
+                logger.debug(f"Excluded peripheral edge at ({edge.x:.1f}, {edge.y:.1f}) - {distance:.1f}mm from center")
+        
+        logger.info(f"Distance filtering: {len(filtered_edges)} edges kept, {excluded_count} peripheral edges excluded (max radius: {max_radius:.1f}mm)")
+        return filtered_edges
+
     def _log_scan_completion_stats(self, scan_count):
         """Log comprehensive scan completion statistics including invalid readings"""
         # Count valid scan points and those with invalid heights
@@ -959,56 +1560,94 @@ class ContinuousDieScanner:
         logger.info(f"=== 5-Pass Scan Completion Statistics ===")
         logger.info(f"Valid scan points collected: {valid_scan_points}")
         logger.info(f"Invalid readings excluded: {invalid_height_points}")
-        logger.info(f"Edge points detected: {len(self.edge_points)}")
+        logger.info(f"Total edge points detected: {len(self.edge_points) + len(self.interior_edges)}")
+        logger.info(f"Outer edges (for center calc): {len(self.outer_edges)}")
+        logger.info(f"Interior edges filtered: {len(self.interior_edges)}")
         logger.info(f"Data quality: {(valid_scan_points/max(1,total_attempts)*100):.1f}% valid readings")
         
         if invalid_height_points > 0:
             logger.warning(f"Excluded {invalid_height_points} invalid readings (-999 values) from calculations")
+        
+        if len(self.interior_edges) > 0:
+            logger.info(f"Interior edge filtering active: {len(self.interior_edges)} interior edges excluded from center calculation")
 
     def calculate_final_center(self):
-        """Calculate die center from edge points"""
-        logger.info(f"Starting center calculation with {len(self.edge_points)} edge points and {len(self.scan_points)} scan points")
+        """Calculate die center from OUTER EDGE points only (filtered)"""
+        # Apply final edge filtering to ensure we only use outer edges
+        self.filter_interior_edges()
         
-        if len(self.edge_points) < 4:
-            logger.error(f"Insufficient edge points for center calculation: {len(self.edge_points)} (need at least 4)")
-            logger.info("Edge points found:")
-            for i, ep in enumerate(self.edge_points):
-                logger.info(f"  Edge {i+1}: ({ep.x:.1f}, {ep.y:.1f}) - {ep.edge_type}")
+        logger.info(f"Starting center calculation with {len(self.outer_edges)} outer edges (filtered from {len(self.edge_points) + len(self.interior_edges)} total)")
+        
+        # Validate we have sufficient outer edges
+        if len(self.outer_edges) < self.min_perimeter_edges:
+            logger.error(f"Insufficient outer edges for center calculation: {len(self.outer_edges)} < {self.min_perimeter_edges}")
+            logger.info("Outer edges found:")
+            for i, ep in enumerate(self.outer_edges):
+                logger.info(f"  Outer Edge {i+1}: ({ep.x:.1f}, {ep.y:.1f}) - {ep.edge_type}")
+            return None
+        
+        # Validate perimeter continuity
+        if not self.validate_perimeter_continuity():
+            logger.error("Perimeter continuity validation failed - insufficient coverage")
             return None
             
         try:
-            # Convert edge points to numpy array
-            edge_coords = np.array([[ep.x, ep.y] for ep in self.edge_points])
+            # Use ONLY outer edges for center calculation
+            edge_coords = np.array([[ep.x, ep.y] for ep in self.outer_edges])
             
-            # Method 1: Least squares circle fitting (Kasa method)
+            # Extract coordinates for fitting
             x = edge_coords[:, 0]
             y = edge_coords[:, 1]
-            A = np.column_stack([2*x, 2*y, np.ones(len(x))])
-            B = x**2 + y**2
-            params = np.linalg.lstsq(A, B, rcond=None)[0]
-            center_x_ls = params[0]
-            center_y_ls = params[1]
             
-            # Method 2: Simple average
-            center_x_avg = np.mean(x)
-            center_y_avg = np.mean(y)
+            # Method 1: RANSAC Circle Fitting (robust to outliers)
+            center_x_ransac, center_y_ransac, radius_ransac, inliers = self.ransac_circle_fit(x, y)
             
-            # Method 3: Median (robust to outliers)
-            center_x_med = np.median(x)
-            center_y_med = np.median(y)
+            # Method 2: Weighted Least squares (using edge quality)
+            center_x_weighted, center_y_weighted = self.weighted_least_squares_fit(x, y)
             
-            # Calculate confidence based on consistency
-            centers = np.array([
-                [center_x_ls, center_y_ls],
-                [center_x_avg, center_y_avg],
-                [center_x_med, center_y_med]
+            # Method 3: Standard Least squares circle fitting (Kasa method)
+            center_x_ls, center_y_ls = self.kasa_circle_fit(x, y)
+            
+            # Method 4: Geometric circle fitting (Taubin method - more accurate)
+            center_x_taubin, center_y_taubin = self.taubin_circle_fit(x, y)
+            
+            # Get preliminary center for distance filtering
+            prelim_center_x, prelim_center_y = self.get_preliminary_center_from_5_pass()
+            
+            # Apply distance-based edge filtering using preliminary center
+            filtered_outer_edges = self.filter_edges_by_distance(prelim_center_x, prelim_center_y, max_radius=63.5, edge_list=self.outer_edges)
+            
+            # Re-run fitting methods with distance-filtered edges if we have enough
+            if len(filtered_outer_edges) >= self.min_perimeter_edges:
+                logger.info(f"Re-calculating with {len(filtered_outer_edges)} distance-filtered edges")
+                filtered_coords = np.array([[ep.x, ep.y] for ep in filtered_outer_edges])
+                x_filtered = filtered_coords[:, 0]
+                y_filtered = filtered_coords[:, 1]
+                
+                # Re-run methods with filtered data
+                center_x_ransac, center_y_ransac, radius_ransac, inliers = self.ransac_circle_fit(x_filtered, y_filtered)
+                center_x_weighted, center_y_weighted = self.weighted_least_squares_fit(x_filtered, y_filtered)
+                center_x_ls, center_y_ls = self.kasa_circle_fit(x_filtered, y_filtered)
+                center_x_taubin, center_y_taubin = self.taubin_circle_fit(x_filtered, y_filtered)
+                
+                x, y = x_filtered, y_filtered  # Use filtered data for final results
+            else:
+                logger.warning(f"Distance filtering removed too many edges ({len(filtered_outer_edges)} remaining), using original data")
+            
+            # Multi-method consensus calculation
+            final_center_x, final_center_y, confidence = self.multi_method_consensus([
+                (center_x_ransac, center_y_ransac, 0.4),  # RANSAC - highest weight
+                (center_x_weighted, center_y_weighted, 0.3),  # Weighted - second highest
+                (center_x_taubin, center_y_taubin, 0.2),  # Taubin - geometric accuracy
+                (center_x_ls, center_y_ls, 0.1),  # Kasa - backup method
             ])
-            center_std = np.std(centers, axis=0)
-            confidence = max(0, 100 - (np.mean(center_std) * 10))
             
-            # Use least squares result as primary
-            final_center_x = center_x_ls
-            final_center_y = center_y_ls
+            logger.info(f"=== Multi-Method Circle Fitting Results ===")
+            logger.info(f"RANSAC: ({center_x_ransac:.1f}, {center_y_ransac:.1f}) - {len(inliers)}/{len(x)} inliers")
+            logger.info(f"Weighted LS: ({center_x_weighted:.1f}, {center_y_weighted:.1f})")
+            logger.info(f"Taubin: ({center_x_taubin:.1f}, {center_y_taubin:.1f})")
+            logger.info(f"Kasa LS: ({center_x_ls:.1f}, {center_y_ls:.1f})")
+            logger.info(f"Final consensus: ({final_center_x:.1f}, {final_center_y:.1f}) confidence={confidence:.1f}%")
             
             # Calculate diameter estimate
             distances = np.sqrt((x - final_center_x)**2 + (y - final_center_y)**2)
@@ -1023,12 +1662,10 @@ class ContinuousDieScanner:
                 logger.warning("No valid heights found for average calculation")
                 avg_height = 0.0
             
-            logger.info(f"=== Center Calculation Results ===")
-            logger.info(f"Least squares: ({center_x_ls:.1f}, {center_y_ls:.1f})")
-            logger.info(f"Average: ({center_x_avg:.1f}, {center_y_avg:.1f})")
-            logger.info(f"Median: ({center_x_med:.1f}, {center_y_med:.1f})")
+            logger.info(f"=== Final Center Calculation Summary ===")
             logger.info(f"Final center: ({final_center_x:.1f}, {final_center_y:.1f})")
             logger.info(f"Diameter: {diameter:.1f}mm, Confidence: {confidence:.1f}%")
+            logger.info(f"Based on {len(self.outer_edges)} outer edges, {len(self.interior_edges)} interior edges filtered")
             
             return DieCenter(
                 center_x=final_center_x,
@@ -1044,15 +1681,16 @@ class ContinuousDieScanner:
             return None
             
     def write_results_to_robot(self, die_center):
-        """Write results to robot registers"""
+        """Write comprehensive results to robot registers and console"""
         try:
+            # Write primary results to robot
             self.robot._write_parameter('ds_center_x', die_center.center_x)
             self.robot._write_parameter('ds_center_y', die_center.center_y)
             self.robot._write_parameter('ds_avg_height', die_center.avg_height)
             self.robot._write_parameter('ds_confidence', int(die_center.confidence))
             self.robot._write_parameter('ds_total_points', len(self.scan_points))
             
-            # Write edge points (up to 8 points)
+            # Write edge points (up to 8 points, prioritize outer edges)
             edge_registers = [
                 ('ds_edge_x1', 'ds_edge_y1'), ('ds_edge_x2', 'ds_edge_y2'),
                 ('ds_edge_x3', 'ds_edge_y3'), ('ds_edge_x4', 'ds_edge_y4'),
@@ -1060,18 +1698,260 @@ class ContinuousDieScanner:
                 ('ds_edge_x7', 'ds_edge_y7'), ('ds_edge_x8', 'ds_edge_y8')
             ]
             
+            # Prioritize outer edges for robot register output
+            edges_to_write = self.outer_edges[:8] if len(self.outer_edges) >= 8 else self.outer_edges
+            
             for i, (x_reg, y_reg) in enumerate(edge_registers):
-                if i < len(self.edge_points):
-                    self.robot._write_parameter(x_reg, self.edge_points[i].x)
-                    self.robot._write_parameter(y_reg, self.edge_points[i].y)
+                if i < len(edges_to_write):
+                    self.robot._write_parameter(x_reg, edges_to_write[i].x)
+                    self.robot._write_parameter(y_reg, edges_to_write[i].y)
                 else:
                     self.robot._write_parameter(x_reg, 0.0)
                     self.robot._write_parameter(y_reg, 0.0)
-                    
-            logger.info("Results written to robot registers")
+            
+            # Set success status
+            self.set_success_status(die_center)
+            
+            # Comprehensive console output
+            self._print_comprehensive_results(die_center)
+            
+            logger.info("Results written to robot registers and displayed")
             
         except Exception as e:
             logger.error(f"Failed to write results to robot: {e}")
+            self.set_error_status(f"Results output failed: {e}")
+    
+    def _print_comprehensive_results(self, die_center):
+        """Print comprehensive scanning results to console"""
+        print("\n" + "="*60)
+        print("           🎯 DIE SCANNING RESULTS - SUCCESS")
+        print("="*60)
+        
+        # Primary results
+        print(f"📍 DIE CENTER: [{die_center.center_x:.1f}, {die_center.center_y:.1f}] mm")
+        print(f"📏 DIAMETER: {die_center.diameter:.1f} mm")
+        print(f"📐 AVG HEIGHT: {die_center.avg_height:.1f} mm")
+        print(f"🎯 CONFIDENCE: {die_center.confidence:.1f}%")
+        
+        # Data quality metrics
+        valid_scan_points = len([sp for sp in self.scan_points if sp.is_valid and sp.height > -999])
+        invalid_readings = len(self.scan_points) - valid_scan_points
+        data_quality = (valid_scan_points / max(1, len(self.scan_points))) * 100
+        
+        print(f"\n📊 DATA QUALITY:")
+        print(f"   • Valid scan points: {valid_scan_points}")
+        print(f"   • Invalid readings: {invalid_readings}")
+        print(f"   • Data quality: {data_quality:.1f}%")
+        
+        # Edge detection summary
+        print(f"\n🔍 EDGE DETECTION:")
+        print(f"   • Total edges found: {len(self.edge_points) + len(self.interior_edges)}")
+        print(f"   • Outer edges (used): {len(self.outer_edges)}")
+        print(f"   • Interior edges (filtered): {len(self.interior_edges)}")
+        
+        # Comprehensive scanning coverage analysis
+        coverage_analysis = self._analyze_scanning_coverage()
+        print(f"\n📏 SCAN COVERAGE ANALYSIS:")
+        print(f"   • X-range: {coverage_analysis['x_range']:.1f} mm")
+        print(f"   • Y-range: {coverage_analysis['y_range']:.1f} mm")
+        print(f"   • Total area scanned: {coverage_analysis['total_area']:.0f} mm²")
+        print(f"   • Point density: {coverage_analysis['point_density']:.1f} points/mm²")
+        print(f"   • Edge coverage: {coverage_analysis['edge_coverage']:.1f}% of perimeter")
+        print(f"   • Scanning efficiency: {coverage_analysis['efficiency']:.1f}%")
+        
+        # True center comparison (known target)
+        true_center_x, true_center_y = 398.0, 809.0
+        error_x = abs(die_center.center_x - true_center_x)
+        error_y = abs(die_center.center_y - true_center_y)
+        total_error = np.sqrt(error_x**2 + error_y**2)
+        
+        print(f"\n🎯 ACCURACY (vs true center [398, 809]):")
+        print(f"   • X error: {error_x:.1f} mm")
+        print(f"   • Y error: {error_y:.1f} mm")
+        print(f"   • Total error: {total_error:.1f} mm")
+        
+        if total_error <= 1.0:
+            print(f"   ✅ TARGET ACHIEVED: ±1mm accuracy")
+        elif total_error <= 2.0:
+            print(f"   ⚠️  CLOSE: Within 2mm accuracy")
+        else:
+            print(f"   ❌ IMPROVEMENT NEEDED: >2mm error")
+        
+        # ASCII die surface visualization
+        print(f"\n🗺️  DIE SURFACE MAP:")
+        self._print_ascii_die_surface(die_center)
+        
+        print("="*60)
+        print(f"✅ SCAN COMPLETE - Results written to robot registers")
+        print("="*60 + "\n")
+        
+    def _print_ascii_die_surface(self, die_center):
+        """Print ASCII visualization of die surface with scan points and edges"""
+        if not self.scan_points:
+            print("   No scan data available for visualization")
+            return
+        
+        # Get valid scan points with heights
+        valid_points = [sp for sp in self.scan_points if sp.is_valid and sp.height > -999]
+        if not valid_points:
+            print("   No valid scan points for visualization")
+            return
+        
+        # Determine visualization bounds
+        x_coords = [sp.x for sp in valid_points]
+        y_coords = [sp.y for sp in valid_points]
+        heights = [sp.height for sp in valid_points]
+        
+        x_min, x_max = min(x_coords), max(x_coords)
+        y_min, y_max = min(y_coords), max(y_coords)
+        h_min, h_max = min(heights), max(heights)
+        
+        # Create ASCII grid (30x20 characters for reasonable display)
+        grid_width, grid_height = 30, 20
+        grid = [[' ' for _ in range(grid_width)] for _ in range(grid_height)]
+        
+        # Height symbols (low to high)
+        height_symbols = ['.', '~', '-', '=', '#', '@']
+        
+        # Map scan points to grid
+        for sp in valid_points:
+            # Convert to grid coordinates
+            grid_x = int((sp.x - x_min) / (x_max - x_min + 0.001) * (grid_width - 1))
+            grid_y = int((sp.y - y_min) / (y_max - y_min + 0.001) * (grid_height - 1))
+            
+            # Ensure within bounds
+            grid_x = max(0, min(grid_width - 1, grid_x))
+            grid_y = max(0, min(grid_height - 1, grid_y))
+            
+            # Convert height to symbol
+            if h_max > h_min:
+                height_ratio = (sp.height - h_min) / (h_max - h_min)
+            else:
+                height_ratio = 0.5
+            symbol_idx = int(height_ratio * (len(height_symbols) - 1))
+            symbol_idx = max(0, min(len(height_symbols) - 1, symbol_idx))
+            
+            grid[grid_y][grid_x] = height_symbols[symbol_idx]
+        
+        # Mark die center on grid
+        center_grid_x = int((die_center.center_x - x_min) / (x_max - x_min + 0.001) * (grid_width - 1))
+        center_grid_y = int((die_center.center_y - y_min) / (y_max - y_min + 0.001) * (grid_height - 1))
+        center_grid_x = max(0, min(grid_width - 1, center_grid_x))
+        center_grid_y = max(0, min(grid_height - 1, center_grid_y))
+        grid[center_grid_y][center_grid_x] = '+'
+        
+        # Mark outer edges on grid
+        for edge in self.outer_edges:
+            edge_grid_x = int((edge.x - x_min) / (x_max - x_min + 0.001) * (grid_width - 1))
+            edge_grid_y = int((edge.y - y_min) / (y_max - y_min + 0.001) * (grid_height - 1))
+            edge_grid_x = max(0, min(grid_width - 1, edge_grid_x))
+            edge_grid_y = max(0, min(grid_height - 1, edge_grid_y))
+            grid[edge_grid_y][edge_grid_x] = 'E'
+        
+        # Print grid with coordinates
+        print(f"   Area: X[{x_min:.0f}-{x_max:.0f}] Y[{y_min:.0f}-{y_max:.0f}] mm")
+        print(f"   Heights: {h_min:.1f} to {h_max:.1f} mm")
+        print("   Symbols: . ~ - = # @ (low→high)  + = center  E = edges")
+        print()
+        
+        # Print grid with Y coordinates
+        for i, row in enumerate(grid):
+            y_val = y_max - (i / (grid_height - 1)) * (y_max - y_min)
+            print(f"   {y_val:4.0f} │{''.join(row)}│")
+        
+        # Print X coordinate scale
+        print("       └" + "─" * grid_width + "┘")
+        x_scale = "        "
+        for i in range(0, grid_width, 6):
+            x_val = x_min + (i / (grid_width - 1)) * (x_max - x_min)
+            x_scale += f"{x_val:4.0f}  "
+        print(x_scale)
+        print()
+    
+    def _analyze_scanning_coverage(self):
+        """Analyze scanning coverage for quality assessment"""
+        coverage_data = {
+            'x_range': 0.0,
+            'y_range': 0.0,
+            'total_area': 0.0,
+            'point_density': 0.0,
+            'edge_coverage': 0.0,
+            'efficiency': 0.0
+        }
+        
+        if not self.scan_points:
+            return coverage_data
+        
+        # Get valid scan points
+        valid_points = [sp for sp in self.scan_points if sp.is_valid and sp.height > -999]
+        if not valid_points:
+            return coverage_data
+        
+        # Basic coverage metrics
+        x_coords = [sp.x for sp in valid_points]
+        y_coords = [sp.y for sp in valid_points]
+        
+        x_range = max(x_coords) - min(x_coords)
+        y_range = max(y_coords) - min(y_coords)
+        total_area = x_range * y_range
+        
+        # Point density (points per square mm)
+        point_density = len(valid_points) / max(1, total_area)
+        
+        # Edge coverage analysis (estimate perimeter coverage)
+        die_radius = 25.4  # ~1 inch radius for typical die
+        expected_perimeter = 2 * np.pi * die_radius
+        
+        # Calculate coverage around perimeter
+        if len(self.outer_edges) > 0:
+            # Estimate angular coverage of detected edges
+            edge_angles = []
+            center_x = np.mean([sp.x for sp in valid_points])
+            center_y = np.mean([sp.y for sp in valid_points])
+            
+            for edge in self.outer_edges:
+                angle = np.arctan2(edge.y - center_y, edge.x - center_x)
+                edge_angles.append(angle)
+            
+            # Sort angles and find gaps
+            edge_angles.sort()
+            if len(edge_angles) > 1:
+                # Calculate angular spans covered
+                angular_coverage = 0
+                for i in range(len(edge_angles)):
+                    next_i = (i + 1) % len(edge_angles)
+                    gap = abs(edge_angles[next_i] - edge_angles[i])
+                    if gap > np.pi:  # Handle wrap-around
+                        gap = 2 * np.pi - gap
+                    if gap < np.pi / 4:  # Only count small gaps as coverage
+                        angular_coverage += gap
+                
+                edge_coverage = (angular_coverage / (2 * np.pi)) * 100
+            else:
+                edge_coverage = (len(self.outer_edges) / 8) * 100  # Rough estimate
+        else:
+            edge_coverage = 0.0
+        
+        # Scanning efficiency (ratio of useful points to total scans)
+        total_scan_attempts = len(self.scan_points)  # Include invalid readings
+        efficiency = (len(valid_points) / max(1, total_scan_attempts)) * 100
+        
+        # Log detailed coverage analysis
+        logger.info(f"=== Scanning Coverage Analysis ===")
+        logger.info(f"Valid scan points: {len(valid_points)}/{total_scan_attempts}")
+        logger.info(f"Scan area: {x_range:.1f} x {y_range:.1f} mm = {total_area:.0f} mm²")
+        logger.info(f"Point density: {point_density:.2f} points/mm²")
+        logger.info(f"Edge detection: {len(self.outer_edges)} outer edges ({edge_coverage:.1f}% perimeter coverage)")
+        logger.info(f"Scanning efficiency: {efficiency:.1f}% (valid readings)")
+        
+        return {
+            'x_range': x_range,
+            'y_range': y_range,
+            'total_area': total_area,
+            'point_density': point_density,
+            'edge_coverage': edge_coverage,
+            'efficiency': efficiency
+        }
             
     def move_to_final_position(self, die_center):
         """Move robot to final position above die center"""

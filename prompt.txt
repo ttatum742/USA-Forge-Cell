@@ -1,6 +1,4 @@
-Let's come up with a plan for the following tasks:
+see err.txt for the results of the last 2 runs. I think that the radial scan is really screwing us up. It found more peripheral edges than it did die edges, which drastically skewed our results. Let's try starting both the x pass and the radial pass just outside of the detected edge, and then work inward towards the estimated die center, rather than working outward and picking up non-valid edges. 
 
-1) The robot should not be taking invalid readings into account when finding the center. An invalid reading will be -999. Ensure that we are not letting these affect center calculations. 
 
-2) Any edge found with -999 values should be disregarded
 
