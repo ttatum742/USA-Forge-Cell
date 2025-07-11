@@ -443,7 +443,7 @@ class ContinuousDieScanner:
         
         # Scanning parameters
         y_scan_distance = 120.0  # 5 inches in mm
-        scan_step = 5  # mm - faster initial scanning, refined later
+        scan_step = 1.5  # mm - faster initial scanning, refined later
         
         # NEW SCAN PATTERN: After calibration, move +5" in Y, +5" in X
         # This becomes the starting position for Pass 1
@@ -581,11 +581,10 @@ class ContinuousDieScanner:
         logger.info("Starting cross-direction (X) scanning for edge validation")
         x_scan_count = self.perform_cross_direction_scan(start_x, start_y, start_z, y_scan_distance, scan_step)
         
-        # Add radial validation scanning from estimated center
-        logger.info("Starting radial validation scanning")
-        radial_scan_count = self.perform_radial_validation_scan(start_x, start_y, start_z, scan_step)
+        # REMOVED: Radial scanning caused inconsistent readings
+        logger.info("Radial scanning disabled - using Y+X direction scanning only for consistency")
         
-        total_scan_count = scan_count + x_scan_count + radial_scan_count
+        total_scan_count = scan_count + x_scan_count
         
         # Log completion with invalid reading statistics
         self._log_scan_completion_stats(total_scan_count)
@@ -600,7 +599,7 @@ class ContinuousDieScanner:
         prelim_center_x, prelim_center_y = self.get_preliminary_center_from_5_pass()
         
         # ADAPTIVE scanning parameters based on detected edges from 5-pass
-        focused_scan_distance = 50.0  # 50mm total scan length
+        focused_scan_distance = 20.0  # 20mm total scan length
         x_step_size = 0.5  # 0.5mm steps for refined edge scanning
         
         # Calculate optimal scanning position based on detected outer edges
@@ -713,7 +712,8 @@ class ContinuousDieScanner:
         
         return scan_count, last_height
     
-    def perform_radial_validation_scan(self, reference_x, reference_y, reference_z, scan_step):
+    # DISABLED: Radial scanning caused inconsistent readings - using Y+X scanning only
+    def perform_radial_validation_scan_DISABLED(self, reference_x, reference_y, reference_z, scan_step):
         """Perform radial spoke scanning in OUTER EDGE area to validate perimeter"""
         radial_scan_count = 0
         last_height = None
@@ -764,7 +764,8 @@ class ContinuousDieScanner:
         logger.info(f"Radial validation scanning complete: {radial_scan_count} additional points")
         return radial_scan_count
     
-    def _execute_radial_spoke(self, center_x, center_y, center_z, angle_deg, scan_length, step_size, spoke_name, last_height, start_radius=40.0):
+    # DISABLED: Part of radial scanning - no longer used
+    def _execute_radial_spoke_DISABLED(self, center_x, center_y, center_z, angle_deg, scan_length, step_size, spoke_name, last_height, start_radius=40.0):
         """Execute a single radial spoke scan INWARD from detected edge area toward center"""
         angle_rad = np.radians(angle_deg)
         radius_steps = int(scan_length / step_size)

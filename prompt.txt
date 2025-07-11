@@ -1,4 +1,4 @@
-see err.txt for the results of the last 2 runs. I think that the radial scan is really screwing us up. It found more peripheral edges than it did die edges, which drastically skewed our results. Let's try starting both the x pass and the radial pass just outside of the detected edge, and then work inward towards the estimated die center, rather than working outward and picking up non-valid edges. 
+see err.txt for the results of the last run. The x pass looks way better, but the radial pass is really inconsistent and can easily result in bad reads. Remove the radial pass method. 
 
 
 
