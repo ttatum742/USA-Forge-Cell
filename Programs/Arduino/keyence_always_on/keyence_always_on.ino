@@ -7,6 +7,7 @@
  * 
  * Hardware Connections:
  * - Analog Pin A0: Laser sensor analog output (0-5V)
+ * - Digital Pin 2: Relay control for sensor zeroing
  * - USB: Communication with industrial PC
  * - Sensor Power: Connected directly to external power supply (always on)
  * 
@@ -17,6 +18,7 @@
 
 // Pin definitions
 const int LASER_ANALOG_PIN = A0;    // Analog input from laser sensor
+const int SENSOR_ZERO_PIN = 2;      // Digital output to control sensor zeroing relay
 
 // Measurement parameters
 const float VOLTAGE_REF = 5.0;      // Arduino reference voltage
@@ -52,6 +54,8 @@ void setup() {
   
   // Initialize pins
   pinMode(LASER_ANALOG_PIN, INPUT);
+  pinMode(SENSOR_ZERO_PIN, OUTPUT);
+  digitalWrite(SENSOR_ZERO_PIN, LOW);  // Initially off
   
   // Set ADC reference to external 5V
   analogReference(DEFAULT);
@@ -67,17 +71,22 @@ void setup() {
 }
 
 void loop() {
-  // Check for incoming commands
+  // Check for incoming commands - only process when complete line is available
   if (Serial.available()) {
     inputCommand = Serial.readStringUntil('\n');
     inputCommand.trim();
-    commandReady = true;
+    
+    // Only process if we actually received a command (not empty)
+    if (inputCommand.length() > 0) {
+      commandReady = true;
+    }
   }
   
   // Process commands
   if (commandReady) {
     processCommand(inputCommand);
     commandReady = false;
+    inputCommand = ""; // Clear the command
   }
   
   delay(5); // Small delay to prevent overwhelming the serial port
@@ -201,6 +210,9 @@ void performCalibration() {
             float totalMeasured = 0;
             int validMeasurements = 0;
             
+            Serial.println("Zeroing sensor...");
+            zeroSensor();
+            
             Serial.println("Taking calibration measurements...");
             
             for (int i = 0; i < 20; i++) {
@@ -298,4 +310,16 @@ void printSystemInfo() {
   Serial.print(measurementRate);
   Serial.println(" Hz");
   Serial.println("===================");
+}
+
+void zeroSensor() {
+  // Pulse the sensor zeroing relay for 60ms
+  digitalWrite(SENSOR_ZERO_PIN, HIGH);
+  delay(60);
+  digitalWrite(SENSOR_ZERO_PIN, LOW);
+  
+  // Wait for sensor to stabilize after zeroing
+  delay(100);
+  
+  Serial.println("Sensor zeroing complete");
 }

@@ -1,26 +1,5 @@
-The register assignments you've created in the fanuc programs related to the die scanning process are unrealistic. They either can't exist, or they overlap with my existing setup. The robot has 200 numerical registers available, and 100 positional registers available. I keep track of everything in an excel file, but that isn't something you can read. I have created a new folder called registers_io containing the master excel file, as well as csv copies of each sheet in the excel file. Those csv files are for you to reference, edit, and maintain as we continue working on this project.
+okay, now there are a few more issues:
 
-Here's what I need done with that data:
+1) the scan start position and scan routine. After calibration, the robot should move 5" in +y, and 5" in +x. This is where the scan should begin. The first pass will be a 5" move in -y. The robot will then move .25" in -x. This is where the second scan start will begin. This second pass will be a 5" move in +y. The robot will then move 0.25" in -x. This is where the 3rd scan start will begin. The third pass is another 5" move in -y. The robot will then move 2.25" in -x. This will be the start position of the 4th pass. The 4th pass will be a 5" move in +y. The robot will then move 0.25" in -x. this is where the 5th pass will start. It will be a 5" move in -y. After the scan completes, move 100mm above the calculated centerpoint. 
 
-- Review each CSV & get familiar with the structure. The file names should explain what data should be inside (i.e. numregs is numerical registers). Some of them may not have data yet. You can go ahead and populate a header for those empty files, using a similar format to those that have data already. 
-- DO NOT MODIFY REGISTER ASSIGNMENTS THAT I ALREADY HAVE ASSIGNED!!! This goes for the csv files, and for programming.
-- Create a new CSV file in the register_io folder called claude_changes. It should have a header that includes reg_desc, old_assign, new_assign. reg_desc is the register description, old_assign is the original number, new_assign is the newly assigned register number. 
-- Any time that you add or edit a register or io assignment to a program, ensure that the relevant register tracking csv reflects the changes. Also make sure to update claude_changes.csv.
-- Add the registers and I/O assignments that are needed for the new programs to their relevant csv files. Be concise with your descriptions. Try and group register assignment numbers by relevance.
-- Modify the die scanning fanuc programs to use the newly assigned & valid register and io assignments. 
-- Modify the die scanning python programs to use the newly assigned & valid register and io assignments.
-
-Here's what else I need done today:
-
-- We need to rework dieScanner_keyence_debug.py. I will be using the keyence_always_on Arduino connection, so make sure Arduino communications reflect the connection settings and general logic of that program. Fanuc communications (reading and writing registers) should occur in the same syntax used in torque_derivative.py. This python program should have a corresponding fanuc program called diescan_debug.ls.
-- This reworked debug program combo should do the following. Keep as much logic and data processing in the python program as possible in order to preserve limited robot register availability.
-	1) pick up the sensor jig from it's fixture
-	2) drive to some defined sensor start PR, located exactly 65mm above a known static point on the stamping die mounting hardware. Assign it some arbitrary point if needed, I can change it later.
-	3) Issue a CALIBRATE to the Arduino, then a CAL_DISTANCE 65 
-	4) Issue a READ to the Arduino, make sure we are at 65 (+-0.02mm)
-	5) Start continuously scanning for the die edges. I can create a background logic program that writes the robot's current location to some registers every 4ms, and the python program can use that data to establish a positional reference. In order to make this as efficient as possible, try to find the closest die face edge to the known static point, then find as many other die face edges as you need to calculate a center point. All dies should be around 4.25" in diameter, with a deep hole in the center that our sensor cannot measure the bottom of. I am worried that the grid scanning or well searching methods will result in false positives as die shapes change (ie hex vs socket heads), so I would like to explore this continuous method instead. Most of the die edges are rounded, so we can search for where values consistently drop off. If that proves to be inconsistent, then we can go back to a grid approach with continuous measurement. 
-	6) Write the calculated offsets to the robot, as well as the avg die face height. 
-	7) Move the robot 100mm above the found center. 
-
-
-If you're unsure about something, pause and wait for my input.
+2) There were other errors I found. I have updated err.txt in the main project folder for your review. 

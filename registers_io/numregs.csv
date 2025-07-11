@@ -196,7 +196,7 @@
 182,robot,ds_next_pos_x,die scan next position X component,real
 183,robot,ds_next_pos_y,die scan next position Y component,real
 184,robot,ds_next_pos_z,die scan next position Z component,real
-185,robot,ds_backup_grid_size,die scan backup grid size (5x5),int
+185,robot,ds_pos_request,die scan position request (1=calculate 0=done),int
 186,robot,ds_backup_step_size,die scan backup step size (10mm),int
 187,robot,ds_backup_start_offset,die scan backup start offset (-20mm),int
 188,robot,ds_backup_total_points,die scan backup total points,int

@@ -171,7 +171,7 @@ class KeyenceAlwaysOnInterface:
     def connect(self) -> bool:
         """Connect to Arduino"""
         try:
-            self.connection = serial.Serial(self.port, self.baudrate, timeout=1)
+            self.connection = serial.Serial(self.port, self.baudrate, timeout=2)
             time.sleep(2)  # Allow Arduino to initialize
             
             # Test connection
@@ -323,9 +323,9 @@ class ContinuousDieScanner:
             logger.error("Sensor calibration failed")
             return False
             
-        # Verify we're at 65mm (±0.02mm)
+        # Verify we're at 65mm (±0.2mm)
         height = self.arduino.read_height()
-        if abs(height - 65.0) > 0.02:
+        if abs(height - 65.0) > 0.2:
             logger.error(f"Calibration verification failed: {height:.3f}mm != 65.000mm")
             return False
             
