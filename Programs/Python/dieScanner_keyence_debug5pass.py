@@ -409,18 +409,24 @@ class ContinuousDieScanner:
         """Worker function for continuous scanning"""
         logger.info(f"Starting continuous scan for {duration} seconds")
         
-        # Calculate 5-pass scan parameters based on new requirements
-        cal_pos = self.robot.read_robot_position()
-        cal_x, cal_y, cal_z = cal_pos[0], cal_pos[1], cal_pos[2]
+        try:
+            # Calculate 5-pass scan parameters based on new requirements
+            logger.info("Reading robot position for scan parameters")
+            cal_pos = self.robot.read_robot_position()
+            cal_x, cal_y, cal_z = cal_pos[0], cal_pos[1], cal_pos[2]
+            logger.info(f"Calibration position: X={cal_x:.1f}, Y={cal_y:.1f}, Z={cal_z:.1f}")
+        except Exception as e:
+            logger.error(f"Failed to read robot position: {e}")
+            return
         
         # Scanning parameters
-        y_scan_distance = 127.0  # 5 inches in mm
+        y_scan_distance = 125.0  # 5 inches in mm
         scan_step = 2.0  # mm
         
         # NEW SCAN PATTERN: After calibration, move +5" in Y, +5" in X
         # This becomes the starting position for Pass 1
-        start_offset_x = 127.0  # +5" in X from calibration
-        start_offset_y = 127.0  # +5" in Y from calibration
+        start_offset_x = 125.0  # X from calibration
+        start_offset_y = 100.0  # Y from calibration
         
         # X movements between passes
         x_move_small = 6.35   # 0.25" in mm
@@ -440,29 +446,48 @@ class ContinuousDieScanner:
         logger.info(f"  Pass 4: Y={scan_start_y - y_scan_distance:.1f} to Y={scan_start_y:.1f} (+Y), then X-0.25")
         logger.info(f"  Pass 5: Y={scan_start_y:.1f} to Y={scan_start_y - y_scan_distance:.1f} (-Y)")
         
+        # First move to scan start position
+        try:
+            logger.info(f"Moving to scan start position: X={scan_start_x:.1f}, Y={scan_start_y:.1f}, Z={scan_start_z:.1f}")
+            self.robot._write_parameter('ds_next_pos_x', scan_start_x)
+            self.robot._write_parameter('ds_next_pos_y', scan_start_y)
+            self.robot._write_parameter('ds_next_pos_z', scan_start_z)
+            self.robot._write_parameter('ds_status', 11)  # Signal robot to move
+            
+            # Wait for robot to complete initial move
+            move_timeout = 10.0
+            move_start = time.time()
+            while time.time() - move_start < move_timeout:
+                status = self.robot._read_parameter('ds_status')
+                if status == 10:  # Robot ready again
+                    break
+                time.sleep(0.1)
+            else:
+                logger.error("Robot timeout on initial move to scan start position")
+                return
+                
+            logger.info("Robot at scan start position")
+        except Exception as e:
+            logger.error(f"Failed to move to scan start position: {e}")
+            return
+            
         # Execute 5-pass scanning pattern
-        scan_count = self.perform_new_5_pass_scan(
-            scan_start_x, scan_start_y, scan_start_z, 
-            y_scan_distance, scan_step, x_move_small, x_move_large)
-        
-        logger.info(f"Continuous scan complete: {scan_count} points collected, {len(self.edge_points)} edges detected")
+        try:
+            logger.info("Starting 5-pass scan execution")
+            scan_count = self.perform_new_5_pass_scan(
+                scan_start_x, scan_start_y, scan_start_z, 
+                y_scan_distance, scan_step, x_move_small, x_move_large)
+            
+            logger.info(f"Continuous scan complete: {scan_count} points collected, {len(self.edge_points)} edges detected")
+        except Exception as e:
+            logger.error(f"Failed during 5-pass scan: {e}")
+            return
         
         # Signal robot scan complete
         try:
             self.robot._write_parameter('ds_status', 12)
             logger.info("Scan completion signaled to robot (ds_status=12)")
-            
-            # Wait for robot to acknowledge scan completion
-            timeout = 10.0
-            start_time = time.time()
-            while time.time() - start_time < timeout:
-                status = self.robot._read_parameter('ds_status')
-                if status == 0:  # Robot has processed the scan completion
-                    logger.info("Robot acknowledged scan completion")
-                    break
-                time.sleep(0.1)
-            else:
-                logger.warning("Robot did not acknowledge scan completion within timeout")
+            logger.info("Robot will process scan completion in background")
                 
         except Exception as e:
             logger.error(f"Failed to signal scan complete: {e}")
@@ -481,9 +506,15 @@ class ContinuousDieScanner:
         
         # PASS 1: 5" move in -Y direction
         logger.info("Pass 1: Starting 5 inch scan in -Y direction")
-        scan_count, last_height = self._execute_scan_pass(
-            current_x, current_y, current_z, y_scan_distance, scan_step, 
-            direction="-Y", pass_num=1, scan_count=scan_count, last_height=last_height)
+        logger.info(f"Pass 1 start position: X={current_x:.1f}, Y={current_y:.1f}, Z={current_z:.1f}")
+        try:
+            scan_count, last_height = self._execute_scan_pass(
+                current_x, current_y, current_z, y_scan_distance, scan_step, 
+                direction="-Y", pass_num=1, scan_count=scan_count, last_height=last_height)
+            logger.info(f"Pass 1 completed: {scan_count} points so far")
+        except Exception as e:
+            logger.error(f"Pass 1 failed: {e}")
+            return 0
         
         # Move -0.25" in X for Pass 2
         current_x -= x_move_small
@@ -804,17 +835,26 @@ class ContinuousDieScanner:
             self.robot._write_parameter('ds_command', 7)  # Move to final position command
             logger.info(f"Moving to final position above center: ({die_center.center_x:.1f}, {die_center.center_y:.1f})")
             
-            # Wait for robot to complete
+            # Wait for robot to complete final move
+            # The robot should process the ds_status=12 signal and then execute the final move
             timeout = 30.0
             start_time = time.time()
+            status_12_seen = False
+            
             while time.time() - start_time < timeout:
                 status = self.robot._read_parameter('ds_status')
                 logger.debug(f"Robot status during final move: {status}")
-                if status == 0:  # Complete
+                
+                if status == 12:  # Still in scan complete state
+                    status_12_seen = True
+                    logger.debug("Robot processing scan completion...")
+                elif status == 0 and status_12_seen:  # Complete after processing scan completion
+                    logger.info("Robot completed final move")
+                    break
+                elif status == 0 and not status_12_seen:  # Already processed
                     logger.info("Robot at final position")
                     break
-                elif status == 12:  # Still in scan complete state
-                    logger.debug("Robot still in scan complete state, waiting...")
+                    
                 time.sleep(0.5)
             else:
                 logger.warning("Robot final move timeout - robot may not have completed move")
