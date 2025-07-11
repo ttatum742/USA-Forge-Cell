@@ -420,8 +420,8 @@ class ContinuousDieScanner:
             return
         
         # Scanning parameters
-        y_scan_distance = 125.0  # 5 inches in mm
-        scan_step = 2.0  # mm
+        y_scan_distance = 115.0  # 5 inches in mm
+        scan_step = 0.25  # mm
         
         # NEW SCAN PATTERN: After calibration, move +5" in Y, +5" in X
         # This becomes the starting position for Pass 1
@@ -560,7 +560,8 @@ class ContinuousDieScanner:
             current_x, current_y, current_z, y_scan_distance, scan_step, 
             direction="-Y", pass_num=5, scan_count=scan_count, last_height=last_height)
         
-        logger.info(f"NEW 5-pass scan completed: {scan_count} points, {len(self.edge_points)} edges")
+        # Log completion with invalid reading statistics
+        self._log_scan_completion_stats(scan_count)
         return scan_count
         
     def _execute_scan_pass(self, start_x, start_y, start_z, y_distance, step_size, direction, pass_num, scan_count, last_height):
@@ -704,7 +705,13 @@ class ContinuousDieScanner:
         
     def _detect_edges(self, x, y, height, last_height):
         """Detect edges and add to edge points list"""
-        if last_height is not None:
+        # Validate that current height is valid (not -999)
+        if height <= -999:
+            logger.debug(f"Skipping edge detection - invalid current height: {height}")
+            return None  # Return None to indicate invalid reading
+            
+        # Only proceed with edge detection if we have a valid previous height
+        if last_height is not None and last_height > -999:
             height_diff = height - last_height
             
             # Detect falling edges (drop-offs)
@@ -724,8 +731,26 @@ class ContinuousDieScanner:
                 )
                 self.edge_points.append(edge_point)
                 logger.info(f"EDGE (rise): ({x:.1f}, {y:.1f}) - rise {height_diff:.1f}mm")
+        elif last_height is not None and last_height <= -999:
+            logger.debug(f"Skipping edge detection - invalid previous height: {last_height}")
         
-        return height
+        return height  # Return current height as new last_height (even if this is first valid reading)
+
+    def _log_scan_completion_stats(self, scan_count):
+        """Log comprehensive scan completion statistics including invalid readings"""
+        # Count valid scan points and those with invalid heights
+        valid_scan_points = len([sp for sp in self.scan_points if sp.is_valid and sp.height > -999])
+        invalid_height_points = len([sp for sp in self.scan_points if not sp.is_valid or sp.height <= -999])
+        total_attempts = scan_count + invalid_height_points  # Approximate total attempts
+        
+        logger.info(f"=== 5-Pass Scan Completion Statistics ===")
+        logger.info(f"Valid scan points collected: {valid_scan_points}")
+        logger.info(f"Invalid readings excluded: {invalid_height_points}")
+        logger.info(f"Edge points detected: {len(self.edge_points)}")
+        logger.info(f"Data quality: {(valid_scan_points/max(1,total_attempts)*100):.1f}% valid readings")
+        
+        if invalid_height_points > 0:
+            logger.warning(f"Excluded {invalid_height_points} invalid readings (-999 values) from calculations")
 
     def calculate_final_center(self):
         """Calculate die center from edge points"""
@@ -776,8 +801,14 @@ class ContinuousDieScanner:
             distances = np.sqrt((x - final_center_x)**2 + (y - final_center_y)**2)
             diameter = np.mean(distances) * 2
             
-            # Calculate average height
-            avg_height = np.mean([sp.height for sp in self.scan_points if sp.is_valid])
+            # Calculate average height - explicitly filter out -999 invalid readings
+            valid_heights = [sp.height for sp in self.scan_points if sp.is_valid and sp.height > -999]
+            if valid_heights:
+                avg_height = np.mean(valid_heights)
+                logger.debug(f"Average height calculated from {len(valid_heights)} valid readings (excluded {len(self.scan_points) - len(valid_heights)} invalid readings)")
+            else:
+                logger.warning("No valid heights found for average calculation")
+                avg_height = 0.0
             
             logger.info(f"=== Center Calculation Results ===")
             logger.info(f"Least squares: ({center_x_ls:.1f}, {center_y_ls:.1f})")

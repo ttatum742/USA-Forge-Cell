@@ -1,5 +1,6 @@
-okay, now there are a few more issues:
+Let's come up with a plan for the following tasks:
 
-1) the scan start position and scan routine. After calibration, the robot should move 5" in +y, and 5" in +x. This is where the scan should begin. The first pass will be a 5" move in -y. The robot will then move .25" in -x. This is where the second scan start will begin. This second pass will be a 5" move in +y. The robot will then move 0.25" in -x. This is where the 3rd scan start will begin. The third pass is another 5" move in -y. The robot will then move 2.25" in -x. This will be the start position of the 4th pass. The 4th pass will be a 5" move in +y. The robot will then move 0.25" in -x. this is where the 5th pass will start. It will be a 5" move in -y. After the scan completes, move 100mm above the calculated centerpoint. 
+1) The robot should not be taking invalid readings into account when finding the center. An invalid reading will be -999. Ensure that we are not letting these affect center calculations. 
 
-2) There were other errors I found. I have updated err.txt in the main project folder for your review. 
+2) Any edge found with -999 values should be disregarded
+
