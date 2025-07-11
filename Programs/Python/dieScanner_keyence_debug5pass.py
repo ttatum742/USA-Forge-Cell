@@ -17,6 +17,9 @@ import threading
 from typing import List, Dict, Optional, Tuple, NamedTuple
 from dataclasses import dataclass
 import json
+import csv
+import os
+from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
@@ -443,7 +446,7 @@ class ContinuousDieScanner:
         
         # Scanning parameters
         y_scan_distance = 120.0  # 5 inches in mm
-        scan_step = 1.5  # mm - faster initial scanning, refined later
+        scan_step = 1.0  # mm - initial scan step distance
         
         # NEW SCAN PATTERN: After calibration, move +5" in Y, +5" in X
         # This becomes the starting position for Pass 1
@@ -588,6 +591,12 @@ class ContinuousDieScanner:
         
         # Log completion with invalid reading statistics
         self._log_scan_completion_stats(total_scan_count)
+        logger.info(f"=== ALL MAIN SCANNING COMPLETE ===")
+        logger.info(f"  5-pass Y scanning: ✅ Complete")
+        logger.info(f"  4-pass X scanning: ✅ Complete") 
+        logger.info(f"  Total scan points: {total_scan_count}")
+        logger.info(f"  Total edges detected: {len(self.edge_points)}")
+        logger.info(f"=== READY FOR EDGE REFINEMENT ===")
         return total_scan_count
     
     def perform_cross_direction_scan(self, original_start_x, original_start_y, original_start_z, y_scan_distance, scan_step):
@@ -599,8 +608,8 @@ class ContinuousDieScanner:
         prelim_center_x, prelim_center_y = self.get_preliminary_center_from_5_pass()
         
         # ADAPTIVE scanning parameters based on detected edges from 5-pass
-        focused_scan_distance = 20.0  # 20mm total scan length
-        x_step_size = 0.5  # 0.5mm steps for refined edge scanning
+        focused_scan_distance = 20.0  # total x scan length
+        x_step_size = 0.5  # small steps for refined edge scanning
         
         # Calculate optimal scanning position based on detected outer edges
         if len(self.outer_edges) > 0:
@@ -612,7 +621,7 @@ class ContinuousDieScanner:
             
             # INWARD STRATEGY: Start just outside average detected edge radius, not max
             # This avoids peripheral equipment while ensuring we cross the actual die edge
-            edge_crossing_offset = avg_edge_radius + 10.0  # Start 10mm outside average edge
+            edge_crossing_offset = avg_edge_radius + 15.0  # Start outside average edge
             logger.info(f"INWARD X-scan positioning: avg edge radius={avg_edge_radius:.1f}mm, max={max_edge_radius:.1f}mm")
             logger.info(f"X-scan will start at {edge_crossing_offset:.1f}mm from center and scan {focused_scan_distance:.1f}mm INWARD toward center")
         else:
@@ -625,20 +634,26 @@ class ContinuousDieScanner:
             prelim_center_y - 15.0,  # 15mm below center
             prelim_center_y,         # At center
             prelim_center_y + 15.0,  # 15mm above center
+            prelim_center_y,         # Additional center pass from opposite side
         ]
         
         logger.info(f"Focused X-direction scanning around preliminary center ({prelim_center_x:.1f}, {prelim_center_y:.1f})")
         logger.info(f"Scan parameters: {focused_scan_distance:.1f}mm range, {x_step_size:.1f}mm steps")
         logger.info(f"Edge crossing strategy: start {edge_crossing_offset:.1f}mm from center, scan inward to cross die edge")
+        logger.info(f"4-pass strategy: passes 1-3 from right side, pass 4 from left side for complete coverage")
         
         for i, y_pos in enumerate(y_positions):
-            logger.info(f"X-direction pass {i+1}/3 at Y={y_pos:.1f}")
+            # Fourth pass is from opposite side (left to right)
+            is_opposite_side = (i == 3)
+            pass_name = f"X-pass-{i+1}" + ("-LEFT" if is_opposite_side else "-RIGHT")
+            
+            logger.info(f"X-direction pass {i+1}/4 at Y={y_pos:.1f} ({'left→right' if is_opposite_side else 'right→left'})")
             
             try:
                 # Execute X-direction scan pass using focused parameters
                 pass_count, last_height = self._execute_x_scan_pass(
                     prelim_center_x, y_pos, original_start_z,
-                    focused_scan_distance, x_step_size, f"X-pass-{i+1}", x_scan_count, last_height, edge_crossing_offset)
+                    focused_scan_distance, x_step_size, pass_name, x_scan_count, last_height, edge_crossing_offset, is_opposite_side)
                 
                 x_scan_count += pass_count
                 logger.info(f"X-direction pass {i+1} completed: {pass_count} points")
@@ -646,27 +661,37 @@ class ContinuousDieScanner:
             except Exception as e:
                 logger.error(f"X-direction pass {i+1} failed: {e}")
         
-        logger.info(f"Cross-direction scanning complete: {x_scan_count} additional points")
+        logger.info(f"=== X-DIRECTION SCANNING COMPLETE ===")
+        logger.info(f"  4 X-direction passes completed successfully")
+        logger.info(f"  Additional scan points: {x_scan_count}")
+        logger.info(f"  Main scanning phase ready to complete")
         return x_scan_count
     
-    def _execute_x_scan_pass(self, center_x, y_position, start_z, x_distance, step_size, pass_name, scan_count, last_height, edge_crossing_offset=45.0):
+    def _execute_x_scan_pass(self, center_x, y_position, start_z, x_distance, step_size, pass_name, scan_count, last_height, edge_crossing_offset=45.0, from_opposite_side=False):
         """Execute a single X-direction scan pass positioned to cross die edges"""
         x_steps = int(x_distance / step_size)
         current_y = y_position
         current_z = start_z
         
-        # Position scan to cross die edges: start at center + edge_crossing_offset, scan inward 25mm
-        # This ensures we cross the ~57mm radius die edge
-        scan_start_x = center_x + edge_crossing_offset  # Start outside the die edge
-        logger.info(f"X-scan positioned to cross die edge: start at X={scan_start_x:.1f} (center+{edge_crossing_offset:.1f}), scan {x_distance:.1f}mm inward")
+        # Position scan to cross die edges
+        if from_opposite_side:
+            # Fourth pass: start from LEFT side (center - offset), scan toward center (positive X)
+            scan_start_x = center_x - edge_crossing_offset  # Start on opposite side
+            scan_direction = 1  # Positive X direction
+            logger.info(f"X-scan from LEFT side: start at X={scan_start_x:.1f} (center-{edge_crossing_offset:.1f}), scan {x_distance:.1f}mm toward center")
+        else:
+            # Normal passes: start from RIGHT side (center + offset), scan inward (negative X)
+            scan_start_x = center_x + edge_crossing_offset  # Start outside the die edge  
+            scan_direction = -1  # Negative X direction
+            logger.info(f"X-scan from RIGHT side: start at X={scan_start_x:.1f} (center+{edge_crossing_offset:.1f}), scan {x_distance:.1f}mm inward")
         
         for step in range(x_steps + 1):
             if not self.scanning_active:
                 break
                 
             try:
-                # Calculate current X position - scan inward toward center
-                current_x = scan_start_x - (step * step_size)  # Subtract to scan inward
+                # Calculate current X position based on scan direction
+                current_x = scan_start_x + (scan_direction * step * step_size)
                 
                 # Move robot to position using existing protocol
                 self.robot._write_parameter('ds_next_pos_x', current_x)
@@ -1572,6 +1597,546 @@ class ContinuousDieScanner:
         if len(self.interior_edges) > 0:
             logger.info(f"Interior edge filtering active: {len(self.interior_edges)} interior edges excluded from center calculation")
 
+    def perform_spiral_edge_refinement(self):
+        """Phase 2: Mini-spiral scanning around detected edges for high-precision refinement"""
+        logger.info("=== Phase 2: Mini-Spiral Edge Refinement ===")
+        
+        if len(self.edge_points) == 0:
+            logger.warning("No edges found for spiral refinement")
+            return 0
+        
+        # Spiral parameters
+        spiral_radius = 5.0  # mm - maximum radius of spiral (8mm diameter)
+        spiral_step = 0.5    # mm - high precision step size
+        spiral_turns = 3   # number of turns in spiral
+        points_per_turn = 8  # number of measurement points per turn
+        
+        refined_edges_added = 0
+        original_edge_count = len(self.edge_points)
+        
+        logger.info(f"Starting spiral refinement around {original_edge_count} detected edges")
+        logger.info(f"Spiral params: {spiral_radius}mm radius, {spiral_step}mm step, {spiral_turns} turns")
+        
+        # Create list of current edges to refine (copy to avoid modification during iteration)
+        edges_to_refine = list(self.edge_points)
+        
+        for edge_idx, edge_point in enumerate(edges_to_refine):
+                
+            logger.debug(f"Refining edge {edge_idx+1}/{len(edges_to_refine)}: ({edge_point.x:.1f}, {edge_point.y:.1f})")
+            
+            try:
+                # Perform mini-spiral around this edge
+                spiral_edges = self._perform_mini_spiral_scan(
+                    center_x=edge_point.x,
+                    center_y=edge_point.y, 
+                    spiral_radius=spiral_radius,
+                    spiral_step=spiral_step,
+                    spiral_turns=spiral_turns,
+                    points_per_turn=points_per_turn
+                )
+                
+                refined_edges_added += spiral_edges
+                
+                # Log progress every 5 edges
+                if (edge_idx + 1) % 5 == 0:
+                    logger.info(f"Refined {edge_idx+1}/{len(edges_to_refine)} edges, +{spiral_edges} edges around last 5")
+                    
+            except Exception as e:
+                logger.error(f"Error refining edge {edge_idx+1}: {e}")
+                continue
+        
+        total_edges_after = len(self.edge_points)
+        logger.info(f"Spiral refinement complete: {original_edge_count} → {total_edges_after} edges (+{refined_edges_added})")
+        
+        return refined_edges_added
+    
+    def _perform_mini_spiral_scan(self, center_x, center_y, spiral_radius, spiral_step, spiral_turns, points_per_turn):
+        """Perform mini-spiral scan around a detected edge point"""
+        edges_found = 0
+        total_points = int(spiral_turns * points_per_turn)
+        current_z = self.robot.read_robot_position()[2]  # Use current Z height
+        last_height = None
+        
+        logger.debug(f"Mini-spiral: center=({center_x:.1f}, {center_y:.1f}), {total_points} points")
+        
+        for point in range(total_points):
+            try:
+                # Calculate spiral position
+                progress = point / points_per_turn  # How many turns we've completed
+                angle = progress * 2 * np.pi  # Angle in radians
+                radius = (progress / spiral_turns) * spiral_radius  # Radius grows with progress
+                
+                # Calculate actual X,Y position
+                scan_x = center_x + radius * np.cos(angle)
+                scan_y = center_y + radius * np.sin(angle)
+                
+                # Move to position
+                self.robot._write_parameter('ds_next_pos_x', scan_x)
+                self.robot._write_parameter('ds_next_pos_y', scan_y)
+                self.robot._write_parameter('ds_next_pos_z', current_z)
+                self.robot._write_parameter('ds_status', 11)  # Request move
+                
+                # Wait for move completion (short timeout for small moves)
+                move_timeout = 3.0
+                move_start = time.time()
+                while time.time() - move_start < move_timeout:
+                    status = self.robot._read_parameter('ds_status')
+                    if status == 10:  # Move complete
+                        break
+                    time.sleep(0.02)
+                else:
+                    logger.debug(f"Move timeout in spiral point {point}")
+                    continue
+                
+                # Take measurement
+                height = self.arduino.read_height()
+                
+                if height > -999:
+                    # Create scan point
+                    scan_point = ScanPoint(
+                        x=scan_x, y=scan_y, z=current_z,
+                        height=height, is_valid=True, timestamp=time.time()
+                    )
+                    self.scan_points.append(scan_point)
+                    
+                    # Detect edges with high precision
+                    edge_detected = self._detect_edges(scan_x, scan_y, height, last_height)
+                    if edge_detected is not None and edge_detected != last_height:
+                        # New edge detected in spiral refinement
+                        edges_found += 1
+                        logger.debug(f"Spiral edge found at ({scan_x:.1f}, {scan_y:.1f})")
+                    
+                    last_height = height
+                
+            except Exception as e:
+                logger.error(f"Error in spiral point {point}: {e}")
+                continue
+        
+        return edges_found
+
+    def perform_coverage_gap_analysis(self):
+        """Phase 3: Analyze angular coverage and fill gaps with targeted linear scans"""
+        logger.info("=== Phase 3: Coverage Gap Analysis ===")
+        
+        if len(self.edge_points) < 3:
+            logger.warning("Insufficient edges for gap analysis")
+            return 0
+        
+        # Calculate preliminary center for gap analysis
+        prelim_center_x, prelim_center_y = self.get_preliminary_center_from_5_pass()
+        logger.info(f"Using preliminary center ({prelim_center_x:.1f}, {prelim_center_y:.1f}) for gap analysis")
+        
+        # Calculate angles of all edges relative to preliminary center
+        edge_angles = []
+        for edge in self.edge_points:
+            angle = np.arctan2(edge.y - prelim_center_y, edge.x - prelim_center_x)
+            angle_deg = np.degrees(angle)
+            if angle_deg < 0:
+                angle_deg += 360  # Normalize to 0-360
+            edge_angles.append(angle_deg)
+        
+        # Sort angles to find gaps
+        edge_angles.sort()
+        
+        # Find gaps larger than threshold
+        gap_threshold = 30.0  # degrees - minimum gap to fill
+        gaps_to_fill = []
+        
+        for i in range(len(edge_angles)):
+            next_idx = (i + 1) % len(edge_angles)
+            current_angle = edge_angles[i]
+            next_angle = edge_angles[next_idx]
+            
+            # Calculate gap size (handle wrap-around at 360°)
+            if next_angle > current_angle:
+                gap_size = next_angle - current_angle
+            else:
+                gap_size = (360 - current_angle) + next_angle
+            
+            if gap_size > gap_threshold:
+                gap_center = (current_angle + gap_size/2) % 360
+                gaps_to_fill.append((gap_center, gap_size))
+        
+        logger.info(f"Found {len(gaps_to_fill)} coverage gaps > {gap_threshold}°")
+        
+        # Fill each gap with targeted linear scan
+        gaps_filled = 0
+        scan_radius = self.expected_die_radius + 5.0  # Start outside expected edge
+        
+        for gap_center_deg, gap_size in gaps_to_fill:
+            logger.info(f"Filling gap at {gap_center_deg:.1f}° (size: {gap_size:.1f}°)")
+            
+            try:
+                # Convert angle to radians and calculate start position
+                gap_angle_rad = np.radians(gap_center_deg)
+                start_x = prelim_center_x + scan_radius * np.cos(gap_angle_rad)
+                start_y = prelim_center_y + scan_radius * np.sin(gap_angle_rad)
+                
+                # Scan inward toward center to find edge
+                edges_found = self._perform_targeted_radial_scan(
+                    start_x, start_y, prelim_center_x, prelim_center_y,
+                    scan_distance=25.0, step_size=0.5
+                )
+                
+                if edges_found > 0:
+                    gaps_filled += 1
+                    logger.debug(f"Gap filled: found {edges_found} edges")
+                
+            except Exception as e:
+                logger.error(f"Error filling gap at {gap_center_deg:.1f}°: {e}")
+                continue
+        
+        logger.info(f"Gap analysis complete: {gaps_filled}/{len(gaps_to_fill)} gaps successfully filled")
+        return gaps_filled
+    
+    def _perform_targeted_radial_scan(self, start_x, start_y, center_x, center_y, scan_distance, step_size):
+        """Perform targeted radial scan from outside toward center"""
+        edges_found = 0
+        current_z = self.robot.read_robot_position()[2]
+        last_height = None
+        
+        # Calculate direction vector toward center
+        dx = center_x - start_x
+        dy = center_y - start_y
+        distance = np.sqrt(dx**2 + dy**2)
+        
+        if distance == 0:
+            return 0
+            
+        # Normalize direction
+        dx_norm = dx / distance
+        dy_norm = dy / distance
+        
+        # Scan inward toward center
+        steps = int(scan_distance / step_size)
+        
+        for step in range(steps):
+            scan_x = start_x + (step * step_size * dx_norm)
+            scan_y = start_y + (step * step_size * dy_norm)
+            
+            try:
+                # Move and measure
+                self.robot._write_parameter('ds_next_pos_x', scan_x)
+                self.robot._write_parameter('ds_next_pos_y', scan_y)
+                self.robot._write_parameter('ds_next_pos_z', current_z)
+                self.robot._write_parameter('ds_status', 11)
+                
+                # Wait for move
+                move_timeout = 3.0
+                move_start = time.time()
+                while time.time() - move_start < move_timeout:
+                    status = self.robot._read_parameter('ds_status')
+                    if status == 10:
+                        break
+                    time.sleep(0.02)
+                else:
+                    continue
+                
+                # Measure
+                height = self.arduino.read_height()
+                if height > -999:
+                    scan_point = ScanPoint(
+                        x=scan_x, y=scan_y, z=current_z,
+                        height=height, is_valid=True, timestamp=time.time()
+                    )
+                    self.scan_points.append(scan_point)
+                    
+                    # Detect edges
+                    edge_detected = self._detect_edges(scan_x, scan_y, height, last_height)
+                    if edge_detected is not None and edge_detected != last_height:
+                        edges_found += 1
+                    
+                    last_height = height
+                    
+            except Exception as e:
+                logger.error(f"Error in targeted scan step {step}: {e}")
+                continue
+        
+        return edges_found
+
+    def remove_outlier_edges(self):
+        """Phase 4: Quality validation and outlier removal using statistical analysis"""
+        logger.info("=== Phase 4: Quality Validation and Outlier Removal ===")
+        
+        if len(self.edge_points) < 4:
+            logger.warning("Insufficient edges for outlier analysis")
+            return 0
+        
+        # Get preliminary center for distance calculations
+        prelim_center_x, prelim_center_y = self.get_preliminary_center_from_5_pass()
+        
+        # Calculate distances from preliminary center for all edges
+        edge_distances = []
+        edge_qualities = []
+        
+        for edge in self.edge_points:
+            distance = np.sqrt((edge.x - prelim_center_x)**2 + (edge.y - prelim_center_y)**2)
+            edge_distances.append(distance)
+            edge_qualities.append(edge.confidence)  # Use existing confidence as quality
+        
+        edge_distances = np.array(edge_distances)
+        edge_qualities = np.array(edge_qualities)
+        
+        # Statistical outlier detection based on distance from center
+        distance_mean = np.mean(edge_distances)
+        distance_std = np.std(edge_distances)
+        outlier_threshold = 2.0  # Standard deviations
+        
+        # Quality-based filtering
+        quality_threshold = 0.3  # Minimum quality score
+        
+        # Identify outliers
+        outlier_indices = []
+        
+        for i, (dist, quality) in enumerate(zip(edge_distances, edge_qualities)):
+            is_distance_outlier = abs(dist - distance_mean) > (outlier_threshold * distance_std)
+            is_quality_outlier = quality < quality_threshold
+            
+            if is_distance_outlier or is_quality_outlier:
+                outlier_indices.append(i)
+                logger.debug(f"Outlier edge {i}: dist={dist:.1f}mm (mean±{outlier_threshold}σ: {distance_mean:.1f}±{outlier_threshold*distance_std:.1f}), quality={quality:.2f}")
+        
+        # Remove outliers (in reverse order to preserve indices)
+        outliers_removed = 0
+        for idx in sorted(outlier_indices, reverse=True):
+            removed_edge = self.edge_points.pop(idx)
+            outliers_removed += 1
+            logger.debug(f"Removed outlier edge: ({removed_edge.x:.1f}, {removed_edge.y:.1f})")
+        
+        # Log statistics
+        remaining_edges = len(self.edge_points)
+        logger.info(f"Outlier removal complete: {outliers_removed} outliers removed, {remaining_edges} edges remaining")
+        
+        if remaining_edges > 0:
+            remaining_distances = [np.sqrt((edge.x - prelim_center_x)**2 + (edge.y - prelim_center_y)**2) for edge in self.edge_points]
+            remaining_qualities = [edge.confidence for edge in self.edge_points]
+            
+            logger.info(f"Remaining edge statistics:")
+            logger.info(f"  Distance: {np.mean(remaining_distances):.1f}±{np.std(remaining_distances):.1f}mm")
+            logger.info(f"  Quality: {np.mean(remaining_qualities):.2f}±{np.std(remaining_qualities):.2f}")
+        
+        return outliers_removed
+
+    def export_results_to_csv(self, die_center):
+        """Export comprehensive scan results to CSV file with die surface grid"""
+        try:
+            # Create timestamped filename
+            timestamp = datetime.now()
+            timestamp_str = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
+            csv_filename = f"diescan_{timestamp_str}.csv"
+            
+            # Ensure directory exists
+            results_dir = os.path.join(os.path.dirname(__file__), "diescan_results")
+            os.makedirs(results_dir, exist_ok=True)
+            
+            csv_path = os.path.join(results_dir, csv_filename)
+            
+            logger.info(f"Exporting scan results to CSV: {csv_filename}")
+            
+            with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+                
+                # === HEADER SECTION ===
+                writer.writerow(["FANUC DIE SCANNER RESULTS"])
+                writer.writerow(["Timestamp", timestamp.strftime("%Y-%m-%d %H:%M:%S")])
+                writer.writerow([])
+                
+                # === SUMMARY RESULTS ===
+                writer.writerow(["SUMMARY RESULTS"])
+                writer.writerow(["Die Center X (mm)", f"{die_center.center_x:.1f}"])
+                writer.writerow(["Die Center Y (mm)", f"{die_center.center_y:.1f}"])
+                writer.writerow(["Diameter (mm)", f"{die_center.diameter:.1f}"])
+                writer.writerow(["Average Height (mm)", f"{die_center.avg_height:.1f}"])
+                writer.writerow(["Confidence (%)", f"{die_center.confidence:.1f}"])
+                writer.writerow([])
+                
+                # === ACCURACY ANALYSIS ===
+                true_center_x, true_center_y = 398.0, 809.0
+                error_x = abs(die_center.center_x - true_center_x)
+                error_y = abs(die_center.center_y - true_center_y)
+                total_error = np.sqrt(error_x**2 + error_y**2)
+                
+                writer.writerow(["ACCURACY ANALYSIS"])
+                writer.writerow(["True Center X (mm)", f"{true_center_x:.1f}"])
+                writer.writerow(["True Center Y (mm)", f"{true_center_y:.1f}"])
+                writer.writerow(["X Error (mm)", f"{error_x:.1f}"])
+                writer.writerow(["Y Error (mm)", f"{error_y:.1f}"])
+                writer.writerow(["Total Error (mm)", f"{total_error:.1f}"])
+                writer.writerow(["Target Achieved", "Yes" if total_error <= 1.0 else "No"])
+                writer.writerow([])
+                
+                # === DATA QUALITY ===
+                valid_scan_points = len([sp for sp in self.scan_points if sp.is_valid and sp.height > -999])
+                invalid_readings = len(self.scan_points) - valid_scan_points
+                data_quality = (valid_scan_points / max(1, len(self.scan_points))) * 100
+                
+                writer.writerow(["DATA QUALITY"])
+                writer.writerow(["Total Scan Points", len(self.scan_points)])
+                writer.writerow(["Valid Scan Points", valid_scan_points])
+                writer.writerow(["Invalid Readings", invalid_readings])
+                writer.writerow(["Data Quality (%)", f"{data_quality:.1f}"])
+                writer.writerow([])
+                
+                # === EDGE DETECTION ===
+                writer.writerow(["EDGE DETECTION"])
+                writer.writerow(["Total Edges Found", len(self.edge_points) + len(self.interior_edges)])
+                writer.writerow(["Outer Edges (Used)", len(self.outer_edges)])
+                writer.writerow(["Interior Edges (Filtered)", len(self.interior_edges)])
+                writer.writerow([])
+                
+                # === COVERAGE ANALYSIS ===
+                coverage_analysis = self._analyze_scanning_coverage()
+                writer.writerow(["COVERAGE ANALYSIS"])
+                writer.writerow(["X Range (mm)", f"{coverage_analysis['x_range']:.1f}"])
+                writer.writerow(["Y Range (mm)", f"{coverage_analysis['y_range']:.1f}"])
+                writer.writerow(["Total Area (mm²)", f"{coverage_analysis['total_area']:.0f}"])
+                writer.writerow(["Point Density (points/mm²)", f"{coverage_analysis['point_density']:.3f}"])
+                writer.writerow(["Edge Coverage (% perimeter)", f"{coverage_analysis['edge_coverage']:.1f}"])
+                writer.writerow(["Scanning Efficiency (%)", f"{coverage_analysis['efficiency']:.1f}"])
+                writer.writerow([])
+                
+                # === SCAN POINTS DATA ===
+                writer.writerow(["SCAN POINTS DATA"])
+                writer.writerow(["Point_ID", "X_mm", "Y_mm", "Z_mm", "Height_mm", "Valid", "Timestamp"])
+                
+                for i, sp in enumerate(self.scan_points):
+                    writer.writerow([
+                        i+1,
+                        f"{sp.x:.2f}",
+                        f"{sp.y:.2f}", 
+                        f"{sp.z:.2f}",
+                        f"{sp.height:.2f}" if sp.height > -999 else "INVALID",
+                        "Yes" if sp.is_valid else "No",
+                        f"{sp.timestamp:.2f}"
+                    ])
+                
+                writer.writerow([])
+                
+                # === EDGE POINTS DATA ===
+                writer.writerow(["EDGE POINTS DATA"])
+                writer.writerow(["Edge_ID", "X_mm", "Y_mm", "Type", "Confidence", "Classification"])
+                
+                # Outer edges first
+                for i, ep in enumerate(self.outer_edges):
+                    writer.writerow([
+                        f"O{i+1}",
+                        f"{ep.x:.2f}",
+                        f"{ep.y:.2f}",
+                        ep.edge_type,
+                        f"{ep.confidence:.3f}",
+                        "Outer"
+                    ])
+                
+                # Interior edges
+                for i, ep in enumerate(self.interior_edges):
+                    writer.writerow([
+                        f"I{i+1}",
+                        f"{ep.x:.2f}",
+                        f"{ep.y:.2f}",
+                        ep.edge_type,
+                        f"{ep.confidence:.3f}",
+                        "Interior"
+                    ])
+                
+                writer.writerow([])
+                
+                # === DIE SURFACE GRID ===
+                self._write_die_surface_grid_to_csv(writer, die_center)
+                
+            logger.info(f"CSV export complete: {csv_path}")
+            print(f"📊 Results exported to: Programs/Python/diescan_results/{csv_filename}")
+            
+        except Exception as e:
+            logger.error(f"Failed to export CSV: {e}")
+            print(f"❌ CSV export failed: {e}")
+    
+    def _write_die_surface_grid_to_csv(self, writer, die_center):
+        """Write die surface as a grid to CSV for Excel visualization"""
+        writer.writerow(["DIE SURFACE GRID"])
+        writer.writerow(["Grid shows height values (mm) - can be visualized as heatmap in Excel"])
+        writer.writerow([])
+        
+        # Get valid scan points
+        valid_points = [sp for sp in self.scan_points if sp.is_valid and sp.height > -999]
+        if not valid_points:
+            writer.writerow(["No valid scan data for grid"])
+            return
+        
+        # Determine grid bounds
+        x_coords = [sp.x for sp in valid_points]
+        y_coords = [sp.y for sp in valid_points]
+        heights = [sp.height for sp in valid_points]
+        
+        x_min, x_max = min(x_coords), max(x_coords)
+        y_min, y_max = min(y_coords), max(y_coords)
+        
+        # Create higher resolution grid for CSV (40x30)
+        grid_width, grid_height = 40, 30
+        grid_spacing_x = (x_max - x_min) / (grid_width - 1)
+        grid_spacing_y = (y_max - y_min) / (grid_height - 1)
+        
+        # Initialize grid with None values
+        height_grid = [[None for _ in range(grid_width)] for _ in range(grid_height)]
+        
+        # Fill grid with interpolated height values
+        for sp in valid_points:
+            # Find closest grid position
+            grid_x = int(round((sp.x - x_min) / grid_spacing_x))
+            grid_y = int(round((sp.y - y_min) / grid_spacing_y))
+            
+            # Ensure within bounds
+            grid_x = max(0, min(grid_width - 1, grid_x))
+            grid_y = max(0, min(grid_height - 1, grid_y))
+            
+            # Store height value (or update if multiple points map to same cell)
+            if height_grid[grid_y][grid_x] is None:
+                height_grid[grid_y][grid_x] = sp.height
+            else:
+                # Average if multiple points in same cell
+                height_grid[grid_y][grid_x] = (height_grid[grid_y][grid_x] + sp.height) / 2
+        
+        # Write grid info
+        writer.writerow(["Grid Dimensions", f"{grid_width} x {grid_height}"])
+        writer.writerow(["X Range", f"{x_min:.1f} to {x_max:.1f} mm"])
+        writer.writerow(["Y Range", f"{y_min:.1f} to {y_max:.1f} mm"])
+        writer.writerow(["Cell Size", f"{grid_spacing_x:.2f} x {grid_spacing_y:.2f} mm"])
+        writer.writerow([])
+        
+        # Write column headers (X coordinates)
+        header_row = ["Y\\X"] + [f"{x_min + i*grid_spacing_x:.1f}" for i in range(grid_width)]
+        writer.writerow(header_row)
+        
+        # Write grid rows (Y coordinates and height values)
+        for row in range(grid_height):
+            y_coord = y_max - row * grid_spacing_y  # Start from top (highest Y)
+            row_data = [f"{y_coord:.1f}"]
+            
+            for col in range(grid_width):
+                if height_grid[grid_height - 1 - row][col] is not None:  # Flip Y for display
+                    row_data.append(f"{height_grid[grid_height - 1 - row][col]:.1f}")
+                else:
+                    row_data.append("")  # Empty cell for no data
+            
+            writer.writerow(row_data)
+        
+        writer.writerow([])
+        
+        # Mark die center and edges on grid
+        writer.writerow(["REFERENCE POINTS ON GRID"])
+        writer.writerow(["Die Center", f"({die_center.center_x:.1f}, {die_center.center_y:.1f})"])
+        
+        # Find center position on grid
+        center_grid_x = int(round((die_center.center_x - x_min) / grid_spacing_x))
+        center_grid_y = int(round((die_center.center_y - y_min) / grid_spacing_y))
+        writer.writerow(["Center Grid Position", f"Column {center_grid_x+2}, Row {grid_height - center_grid_y + 1}"])  # +2 for Y\X column, +1 for header
+        
+        # Mark edge positions
+        writer.writerow(["Detected Edges", f"{len(self.outer_edges)} outer edges"])
+        for i, edge in enumerate(self.outer_edges[:10]):  # Limit to first 10 edges
+            edge_grid_x = int(round((edge.x - x_min) / grid_spacing_x))
+            edge_grid_y = int(round((edge.y - y_min) / grid_spacing_y))
+            writer.writerow([f"Edge {i+1}", f"({edge.x:.1f}, {edge.y:.1f}) -> Column {edge_grid_x+2}, Row {grid_height - edge_grid_y + 1}"])
+
     def calculate_final_center(self):
         """Calculate die center from OUTER EDGE points only (filtered)"""
         # Apply final edge filtering to ensure we only use outer edges
@@ -1715,6 +2280,9 @@ class ContinuousDieScanner:
             
             # Comprehensive console output
             self._print_comprehensive_results(die_center)
+            
+            # Export results to CSV
+            self.export_results_to_csv(die_center)
             
             logger.info("Results written to robot registers and displayed")
             
@@ -2041,9 +2609,37 @@ class ContinuousDieScanner:
             # Run scanning worker
             self.continuous_scan_worker(duration=30.0)
             
-            # Stop scanning activity 
+            # Stop main scanning activity - ensure complete termination
             self.scanning_active = False
-            logger.info("Scanning activity stopped, proceeding to center calculation")
+            logger.info("=== Main scanning complete (5-pass + X-direction) ===")
+            
+            # Step 5.5: Advanced Edge Refinement (Phases 2-4)
+            logger.info("=== Starting Advanced Edge Refinement ===")
+            logger.info("Re-enabling scanning for refinement phases")
+            self.scanning_active = True  # Re-enable for refinement phases
+            
+            # Phase 2: Mini-spiral edge refinement
+            initial_edges = len(self.edge_points)
+            logger.info(f"Phase 2: Starting mini-spiral refinement around {initial_edges} detected edges")
+            refined_edges = self.perform_spiral_edge_refinement()
+            logger.info(f"Phase 2 complete: +{refined_edges} refined edges around detected edges")
+            
+            # Phase 3: Coverage gap analysis and filling
+            logger.info("Phase 3: Starting coverage gap analysis")
+            gaps_filled = self.perform_coverage_gap_analysis()
+            logger.info(f"Phase 3 complete: {gaps_filled} coverage gaps filled")
+            
+            # Phase 4: Quality validation and outlier removal
+            logger.info("Phase 4: Starting quality validation and outlier removal")
+            outliers_removed = self.remove_outlier_edges()
+            logger.info(f"Phase 4 complete: {outliers_removed} outlier edges removed")
+            
+            total_edges = len(self.edge_points)
+            logger.info(f"=== Edge Refinement Complete: {initial_edges} → {total_edges} edges ===")
+            
+            # Stop scanning activity after refinement
+            self.scanning_active = False
+            logger.info("All scanning phases complete, proceeding to center calculation")
             
             # Step 6: Calculate and write results
             die_center = self.calculate_final_center()

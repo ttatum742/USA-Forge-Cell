@@ -1,4 +1,1 @@
-see err.txt for the results of the last run. The x pass looks way better, but the radial pass is really inconsistent and can easily result in bad reads. Remove the radial pass method. 
-
-
-
+see err.txt for the results of the last run. The resolution is better in y, but worse in x now that we have ditched radial. Take a look at the ascii map of the die and use that for debugging. Need to come up with a plan to increase the edge resolution and perimeter coverage. What are your thoughts on doing small (<10mm diameter at its largest) spirals outward around the detected edges in order to capture more of the surrounding good edges? Help me come up with a plan to successfully implement this strategy if it's a good idea. I am open to any other recommendations on how to improve the error rate of this system. 

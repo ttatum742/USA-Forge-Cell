@@ -1,78 +1,73 @@
-✅ SCAN COMPLETE: Center [427.7, 814.7]
+✅ SCAN COMPLETE: Center [411.1, 826.5]
 
 ============================================================
            🎯 DIE SCANNING RESULTS - SUCCESS
 ============================================================
-📍 DIE CENTER: [427.7, 814.7] mm
-📏 DIAMETER: 111.4 mm
-📐 AVG HEIGHT: 65.0 mm
-🎯 CONFIDENCE: 83.0%
+📍 DIE CENTER: [411.1, 826.5] mm
+📏 DIAMETER: 108.0 mm
+📐 AVG HEIGHT: 66.1 mm
+🎯 CONFIDENCE: 47.7%
 
 📊 DATA QUALITY:
-   • Valid scan points: 734
+   • Valid scan points: 1448
    • Invalid readings: 0
    • Data quality: 100.0%
 
 🔍 EDGE DETECTION:
-   • Total edges found: 28
-   • Outer edges (used): 11
-   • Interior edges (filtered): 17
-2025-07-11 14:50:30,463 - INFO - === Scanning Coverage Analysis ===
-2025-07-11 14:50:30,464 - INFO - Valid scan points: 734/734
-2025-07-11 14:50:30,464 - INFO - Scan area: 120.6 x 120.0 mm = 14468 mm²
-2025-07-11 14:50:30,465 - INFO - Point density: 0.05 points/mm²
-2025-07-11 14:50:30,465 - INFO - Edge detection: 11 outer edges (42.9% perimeter coverage)
-2025-07-11 14:50:30,466 - INFO - Scanning efficiency: 100.0% (valid readings)
+   • Total edges found: 24
+   • Outer edges (used): 8
+   • Interior edges (filtered): 16
+2025-07-11 15:18:59,258 - INFO - === Scanning Coverage Analysis ===
+2025-07-11 15:18:59,258 - INFO - Valid scan points: 1448/1448
+2025-07-11 15:18:59,259 - INFO - Scan area: 85.5 x 120.0 mm = 10261 mm²
+2025-07-11 15:18:59,259 - INFO - Point density: 0.14 points/mm²
+2025-07-11 15:18:59,260 - INFO - Edge detection: 8 outer edges (9.3% perimeter coverage)
+2025-07-11 15:18:59,261 - INFO - Scanning efficiency: 100.0% (valid readings)
 
 📏 SCAN COVERAGE ANALYSIS:
-   • X-range: 120.6 mm
+   • X-range: 85.5 mm
    • Y-range: 120.0 mm
-   • Total area scanned: 14468 mm²
+   • Total area scanned: 10261 mm²
    • Point density: 0.1 points/mm²
-   • Edge coverage: 42.9% of perimeter
+   • Edge coverage: 9.3% of perimeter
    • Scanning efficiency: 100.0%
 
 🎯 ACCURACY (vs true center [398, 809]):
-   • X error: 29.7 mm
-   • Y error: 5.7 mm
-   • Total error: 30.3 mm
+   • X error: 13.1 mm
+   • Y error: 17.5 mm
+   • Total error: 21.9 mm
    ❌ IMPROVEMENT NEEDED: >2mm error
 
 🗺️  DIE SURFACE MAP:
-   Area: X[369-490] Y[750-870] mm
-   Heights: 55.1 to 77.3 mm
+   Area: X[369-455] Y[750-870] mm
+   Heights: 55.1 to 77.6 mm
    Symbols: . ~ - = # @ (low→high)  + = center  E = edges
 
-    870 │-~             ~# E           │
-    864 │-#     .       ~# ~  ~        │
-    857 │-#     E~      ~# ~ #E        │
-    851 │~#      ~~     ~# ~##         │
-    845 │~#       ~~    ~# ~#          │
-    839 │~E        ~    ~# #           │
-    832 │~-      ~~~~~~~~~~~##         │
-    826 │~-             ~~ ~           │
-    820 │~~             ~~ ~           │
-    813 │~~      ..~~~~~~~~~~~         │
-    807 │~~~~E..       +~~ .   ~~~~~EE │
-    801 │~~      ~~~~~~~~~~~~.         │
-    794 │E~             .~ #           │
-    788 │#~             #~ #           │
-    782 │#~        ~    #~ #           │
-    775 │#~       ~~    #~ ##          │
-    769 │#~      ~~     #~ -##         │
-    763 │~~     E~      #~ - ##        │
-    756 │~~     #       E~ -  E        │
+    870 │# #                  # # #    │
+    864 │# ~                  # # #    │
+    857 │- ~                  E # #    │
+    851 │- ~                  ~ # #    │
+    845 │- ~                  ~ E E    │
+    839 │~ ~                  ~ ~ ~    │
+    832 │~ ~                  ~~~~~~~# │
+    826 │~ ~                  ~ ~ ~    │
+    820 │~ ~                  ~ ~ ~    │
+    813 │~ ~                  ~~~~~~~~ │
+    807 │~ ~                  ~ ~ ~    │
+    801 │~ ~                  ~~~~~~~# │
+    794 │~ ~           +      ~ ~ ~    │
+    788 │~ ~                  ~ ~ ~    │
+    782 │~ ~                  ~ ~ .    │
+    775 │~ ~                  ~ ~ #    │
+    769 │E ~                  ~ # #    │
+    763 │# ~                  # # #    │
+    756 │# E                  # # E    │
     750 │                              │
        └──────────────────────────────┘
-         369   394   419   444   469
+         369   387   405   423   440
 
 ============================================================
 ✅ SCAN COMPLETE - Results written to robot registers
 ============================================================
 
-2025-07-11 14:50:30,479 - INFO - Results written to robot registers and displayed
-2025-07-11 14:50:30,480 - INFO - Acquiring gateway <connector 192.168.0.1:44818[4233421840]> connection: available
-2025-07-11 14:50:30,480 - INFO - Operating gateway <connector 192.168.0.1:44818[4233421840]> connection, after blocking   0.000s
-2025-07-11 14:50:30,481 - INFO - Parameter 'ds_command = (DINT) 7' (cmd) --> ('@0x6B/1/86= (DINT) 7', 'DINT')
-2025-07-11 14:50:30,483 - DETAIL - Validating request: ('@0x6B/1/86= (DINT) 7', 'DINT')
-2025-07-11 14:50:30,483 - DETAIL - Tag: '@0x6B/1/86' yields Operation: {'method': 'write', 'path': [{'class': 107}, {'instance': 1}, {'attribute': 86}], 'tag_type': 196, 'data': [7], 'elements': 1}.update({'route_path': False, 'send_path': '', 'priority_time_tick': None, 'timeout_ticks': None})
+2025-07-11 15:18:59,273 - INFO - Results written to robot registers and displayed
