@@ -336,15 +336,15 @@ class ContinuousDieScanner:
         self.pending_edges = []  # Edges awaiting confirmation
         
         # Edge quality scoring
-        self.min_edge_quality = 0.5  # Minimum quality score to accept edge
+        self.min_edge_quality = 0.6  # Minimum quality score to accept edge
         
         # Interior edge filtering parameters - 4.5" diameter die = 114.3mm diameter = 57.15mm radius
         self.expected_die_radius = 57.15  # mm - 4.5" die radius
         self.min_outer_radius = 45.0  # mm - minimum radius for outer edge acceptance (die edge ~57mm)
         self.max_outer_radius = 70.0  # mm - maximum radius for outer edge acceptance 
         self.interior_exclusion_radius = 35.0  # mm - reject edges closer than this to center
-        self.min_perimeter_edges = 3  # Minimum outer edges required for center calculation (reduced for testing)
-        self.min_angular_coverage = 180.0  # Degrees - minimum perimeter coverage required (reduced for testing)
+        self.min_perimeter_edges = 5  # Minimum outer edges required for center calculation (reduced for testing)
+        self.min_angular_coverage = 225.0  # Degrees - minimum perimeter coverage required (reduced for testing)
         
         # Edge classification tracking
         self.outer_edges = []  # Confirmed outer perimeter edges only
@@ -446,7 +446,7 @@ class ContinuousDieScanner:
         
         # Scanning parameters
         y_scan_distance = 120.0  # 5 inches in mm
-        scan_step = 1.0  # mm - initial scan step distance
+        scan_step = 0.5  # mm - initial scan step distance
         
         # NEW SCAN PATTERN: After calibration, move +5" in Y, +5" in X
         # This becomes the starting position for Pass 1
@@ -593,7 +593,7 @@ class ContinuousDieScanner:
         self._log_scan_completion_stats(total_scan_count)
         logger.info(f"=== ALL MAIN SCANNING COMPLETE ===")
         logger.info(f"  5-pass Y scanning: ✅ Complete")
-        logger.info(f"  4-pass X scanning: ✅ Complete") 
+        logger.info(f"  6-pass X scanning: ✅ Complete (3 right + 3 left)")
         logger.info(f"  Total scan points: {total_scan_count}")
         logger.info(f"  Total edges detected: {len(self.edge_points)}")
         logger.info(f"=== READY FOR EDGE REFINEMENT ===")
@@ -630,24 +630,28 @@ class ContinuousDieScanner:
             logger.warning("No outer edges detected yet, using default X-scan positioning")
         
         # Position passes around preliminary center (not original start)
+        # 6 total passes: 3 from right side, 3 from left side for balanced coverage
         y_positions = [
-            prelim_center_y - 15.0,  # 15mm below center
-            prelim_center_y,         # At center
-            prelim_center_y + 15.0,  # 15mm above center
-            prelim_center_y,         # Additional center pass from opposite side
+            prelim_center_y - 15.0,  # Pass 1: 15mm below center (RIGHT)
+            prelim_center_y,         # Pass 2: At center (RIGHT)
+            prelim_center_y + 15.0,  # Pass 3: 15mm above center (RIGHT)
+            prelim_center_y - 15.0,  # Pass 4: 15mm below center (LEFT)
+            prelim_center_y,         # Pass 5: At center (LEFT)
+            prelim_center_y + 15.0,  # Pass 6: 15mm above center (LEFT)
         ]
         
         logger.info(f"Focused X-direction scanning around preliminary center ({prelim_center_x:.1f}, {prelim_center_y:.1f})")
         logger.info(f"Scan parameters: {focused_scan_distance:.1f}mm range, {x_step_size:.1f}mm steps")
         logger.info(f"Edge crossing strategy: start {edge_crossing_offset:.1f}mm from center, scan inward to cross die edge")
-        logger.info(f"4-pass strategy: passes 1-3 from right side, pass 4 from left side for complete coverage")
+        logger.info(f"6-pass strategy: passes 1-3 from right side, passes 4-6 from left side for balanced coverage")
         
         for i, y_pos in enumerate(y_positions):
-            # Fourth pass is from opposite side (left to right)
-            is_opposite_side = (i == 3)
-            pass_name = f"X-pass-{i+1}" + ("-LEFT" if is_opposite_side else "-RIGHT")
+            # Passes 4-6 are from opposite side (left to right)
+            is_opposite_side = (i >= 3)
+            side_name = "LEFT" if is_opposite_side else "RIGHT"
+            pass_name = f"X-pass-{i+1}-{side_name}"
             
-            logger.info(f"X-direction pass {i+1}/4 at Y={y_pos:.1f} ({'left→right' if is_opposite_side else 'right→left'})")
+            logger.info(f"X-direction pass {i+1}/6 at Y={y_pos:.1f} ({'left→right' if is_opposite_side else 'right→left'})")
             
             try:
                 # Execute X-direction scan pass using focused parameters
@@ -662,7 +666,9 @@ class ContinuousDieScanner:
                 logger.error(f"X-direction pass {i+1} failed: {e}")
         
         logger.info(f"=== X-DIRECTION SCANNING COMPLETE ===")
-        logger.info(f"  4 X-direction passes completed successfully")
+        logger.info(f"  6 X-direction passes completed successfully")
+        logger.info(f"  - 3 passes from RIGHT side (right→left)")
+        logger.info(f"  - 3 passes from LEFT side (left→right)")
         logger.info(f"  Additional scan points: {x_scan_count}")
         logger.info(f"  Main scanning phase ready to complete")
         return x_scan_count
@@ -1606,10 +1612,10 @@ class ContinuousDieScanner:
             return 0
         
         # Spiral parameters
-        spiral_radius = 5.0  # mm - maximum radius of spiral (8mm diameter)
-        spiral_step = 0.5    # mm - high precision step size
+        spiral_radius = 5.0  # mm - maximum radius of spiral 
+        spiral_step = 0.25    # mm - high precision step size
         spiral_turns = 3   # number of turns in spiral
-        points_per_turn = 8  # number of measurement points per turn
+        points_per_turn = 16  # number of measurement points per turn
         
         refined_edges_added = 0
         original_edge_count = len(self.edge_points)
