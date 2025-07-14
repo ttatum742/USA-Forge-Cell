@@ -2051,9 +2051,9 @@ class ContinuousDieScanner:
         
         # Spiral parameters
         spiral_radius = 5.0  # mm - maximum radius of spiral 
-        spiral_step = 0.25    # mm - high precision step size
+        spiral_step = 0.5    # mm - high precision step size
         spiral_turns = 3   # number of turns in spiral
-        points_per_turn = 32  # number of measurement points per turn
+        points_per_turn = 16  # number of measurement points per turn
         
         refined_edges_added = 0
         original_edge_count = len(self.edge_points)

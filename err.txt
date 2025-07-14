@@ -1,73 +1,102 @@
-✅ SCAN COMPLETE: Center [411.1, 826.5]
-
-============================================================
-           🎯 DIE SCANNING RESULTS - SUCCESS
-============================================================
-📍 DIE CENTER: [411.1, 826.5] mm
-📏 DIAMETER: 108.0 mm
-📐 AVG HEIGHT: 66.1 mm
-🎯 CONFIDENCE: 47.7%
-
-📊 DATA QUALITY:
-   • Valid scan points: 1448
-   • Invalid readings: 0
-   • Data quality: 100.0%
-
-🔍 EDGE DETECTION:
-   • Total edges found: 24
-   • Outer edges (used): 8
-   • Interior edges (filtered): 16
-2025-07-11 15:18:59,258 - INFO - === Scanning Coverage Analysis ===
-2025-07-11 15:18:59,258 - INFO - Valid scan points: 1448/1448
-2025-07-11 15:18:59,259 - INFO - Scan area: 85.5 x 120.0 mm = 10261 mm²
-2025-07-11 15:18:59,259 - INFO - Point density: 0.14 points/mm²
-2025-07-11 15:18:59,260 - INFO - Edge detection: 8 outer edges (9.3% perimeter coverage)
-2025-07-11 15:18:59,261 - INFO - Scanning efficiency: 100.0% (valid readings)
-
-📏 SCAN COVERAGE ANALYSIS:
-   • X-range: 85.5 mm
-   • Y-range: 120.0 mm
-   • Total area scanned: 10261 mm²
-   • Point density: 0.1 points/mm²
-   • Edge coverage: 9.3% of perimeter
-   • Scanning efficiency: 100.0%
-
-🎯 ACCURACY (vs true center [398, 809]):
-   • X error: 13.1 mm
-   • Y error: 17.5 mm
-   • Total error: 21.9 mm
-   ❌ IMPROVEMENT NEEDED: >2mm error
-
-🗺️  DIE SURFACE MAP:
-   Area: X[369-455] Y[750-870] mm
-   Heights: 55.1 to 77.6 mm
-   Symbols: . ~ - = # @ (low→high)  + = center  E = edges
-
-    870 │# #                  # # #    │
-    864 │# ~                  # # #    │
-    857 │- ~                  E # #    │
-    851 │- ~                  ~ # #    │
-    845 │- ~                  ~ E E    │
-    839 │~ ~                  ~ ~ ~    │
-    832 │~ ~                  ~~~~~~~# │
-    826 │~ ~                  ~ ~ ~    │
-    820 │~ ~                  ~ ~ ~    │
-    813 │~ ~                  ~~~~~~~~ │
-    807 │~ ~                  ~ ~ ~    │
-    801 │~ ~                  ~~~~~~~# │
-    794 │~ ~           +      ~ ~ ~    │
-    788 │~ ~                  ~ ~ ~    │
-    782 │~ ~                  ~ ~ .    │
-    775 │~ ~                  ~ ~ #    │
-    769 │E ~                  ~ # #    │
-    763 │# ~                  # # #    │
-    756 │# E                  # # E    │
-    750 │                              │
-       └──────────────────────────────┘
-         369   387   405   423   440
-
-============================================================
-✅ SCAN COMPLETE - Results written to robot registers
-============================================================
-
-2025-07-11 15:18:59,273 - INFO - Results written to robot registers and displayed
+2025-07-14 18:17:09,174 - WARNING - Center dynamic (441.8, 821.8) is 50.4mm from true center (max allowed: 40.0mm)
+2025-07-14 18:17:21,269 - WARNING - Center dynamic (441.2, 826.3) is 51.2mm from true center (max allowed: 40.0mm)
+2025-07-14 18:17:21,272 - WARNING - Center dynamic (441.2, 826.3) is 51.2mm from true center (max allowed: 40.0mm)
+2025-07-14 18:17:21,275 - WARNING - Center dynamic (441.2, 826.3) is 51.2mm from true center (max allowed: 40.0mm)
+2025-07-14 18:17:22,266 - WARNING - Center dynamic (439.9, 828.9) is 51.0mm from true center (max allowed: 40.0mm)
+2025-07-14 18:17:49,727 - WARNING - Center dynamic (439.0, 830.6) is 50.8mm from true center (max allowed: 40.0mm)
+2025-07-14 18:17:49,728 - WARNING - Center dynamic (439.0, 830.6) is 50.8mm from true center (max allowed: 40.0mm)
+2025-07-14 18:17:49,729 - WARNING - Center dynamic (439.0, 830.6) is 50.8mm from true center (max allowed: 40.0mm)
+2025-07-14 18:18:02,984 - WARNING - Center dynamic (438.2, 823.7) is 47.5mm from true center (max allowed: 40.0mm)
+2025-07-14 18:18:02,984 - WARNING - Center dynamic (438.2, 823.7) is 47.5mm from true center (max allowed: 40.0mm)
+2025-07-14 18:18:02,986 - WARNING - Center dynamic (438.2, 823.7) is 47.5mm from true center (max allowed: 40.0mm)
+2025-07-14 18:18:39,235 - WARNING - Center dynamic (432.4, 818.0) is 40.4mm from true center (max allowed: 40.0mm)
+2025-07-14 18:18:39,601 - WARNING - Center dynamic (427.0, 822.1) outside reasonable die area bounds
+2025-07-14 18:18:39,602 - WARNING - Center dynamic (427.0, 822.1) outside reasonable die area bounds
+2025-07-14 18:18:39,603 - WARNING - Center dynamic (427.0, 822.1) outside reasonable die area bounds
+2025-07-14 18:18:44,000 - WARNING - Center dynamic (422.4, 825.5) outside reasonable die area bounds
+2025-07-14 18:18:44,002 - WARNING - Center dynamic (422.4, 825.5) outside reasonable die area bounds
+2025-07-14 18:18:44,004 - WARNING - Center dynamic (422.4, 825.5) outside reasonable die area bounds
+2025-07-14 18:19:18,503 - WARNING - Center dynamic (418.5, 827.4) outside reasonable die area bounds
+2025-07-14 18:19:18,505 - WARNING - Center dynamic (418.5, 827.4) outside reasonable die area bounds
+2025-07-14 18:19:18,506 - WARNING - Center dynamic (418.5, 827.4) outside reasonable die area bounds
+2025-07-14 18:19:37,054 - WARNING - Center dynamic (415.1, 822.3) outside reasonable die area bounds
+2025-07-14 18:19:37,055 - WARNING - Center dynamic (415.1, 822.3) outside reasonable die area bounds
+2025-07-14 18:19:37,056 - WARNING - Center dynamic (415.1, 822.3) outside reasonable die area bounds
+2025-07-14 18:19:41,865 - WARNING - Center dynamic (416.9, 820.6) outside reasonable die area bounds
+2025-07-14 18:19:41,866 - WARNING - Center dynamic (416.9, 820.6) outside reasonable die area bounds
+2025-07-14 18:19:41,867 - WARNING - Center dynamic (416.9, 820.6) outside reasonable die area bounds
+2025-07-14 18:19:50,482 - WARNING - Center dynamic (419.3, 819.9) outside reasonable die area bounds
+2025-07-14 18:19:50,485 - WARNING - Center dynamic (419.3, 819.9) outside reasonable die area bounds
+2025-07-14 18:19:50,485 - WARNING - Center dynamic (419.3, 819.9) outside reasonable die area bounds
+2025-07-14 18:19:56,600 - WARNING - Center dynamic (420.8, 819.3) outside reasonable die area bounds
+2025-07-14 18:19:56,601 - WARNING - Center dynamic (420.8, 819.3) outside reasonable die area bounds
+2025-07-14 18:19:56,602 - WARNING - Center dynamic (420.8, 819.3) outside reasonable die area bounds
+2025-07-14 18:20:04,114 - WARNING - Center dynamic (422.8, 819.5) outside reasonable die area bounds
+2025-07-14 18:20:04,115 - WARNING - Center dynamic (422.8, 819.5) outside reasonable die area bounds
+2025-07-14 18:20:04,116 - WARNING - Center dynamic (422.8, 819.5) outside reasonable die area bounds
+2025-07-14 18:20:04,442 - WARNING - Center dynamic (423.9, 819.7) outside reasonable die area bounds
+2025-07-14 18:20:13,888 - WARNING - Center dynamic (424.8, 820.0) outside reasonable die area bounds
+2025-07-14 18:20:13,889 - WARNING - Center dynamic (424.8, 820.0) outside reasonable die area bounds
+2025-07-14 18:20:13,890 - WARNING - Center dynamic (424.8, 820.0) outside reasonable die area bounds
+2025-07-14 18:20:21,778 - WARNING - Center dynamic (420.4, 818.8) outside reasonable die area bounds
+2025-07-14 18:20:21,779 - WARNING - Center dynamic (420.4, 818.8) outside reasonable die area bounds
+2025-07-14 18:20:21,780 - WARNING - Center dynamic (420.4, 818.8) outside reasonable die area bounds
+2025-07-14 18:20:26,591 - WARNING - Center dynamic (417.0, 817.7) outside reasonable die area bounds
+2025-07-14 18:20:26,591 - WARNING - Center dynamic (417.0, 817.7) outside reasonable die area bounds
+2025-07-14 18:20:26,592 - WARNING - Center dynamic (417.0, 817.7) outside reasonable die area bounds
+2025-07-14 18:21:13,182 - WARNING - Center dynamic (414.3, 825.4) outside reasonable die area bounds
+2025-07-14 18:21:13,182 - WARNING - Center dynamic (414.3, 825.4) outside reasonable die area bounds
+2025-07-14 18:21:14,802 - WARNING - Center dynamic (414.0, 828.1) outside reasonable die area bounds
+2025-07-14 18:21:15,051 - WARNING - Center dynamic (413.7, 830.4) outside reasonable die area bounds
+2025-07-14 18:21:15,053 - WARNING - Center dynamic (413.7, 830.4) outside reasonable die area bounds
+2025-07-14 18:21:15,054 - WARNING - Center dynamic (413.7, 830.4) outside reasonable die area bounds
+2025-07-14 18:21:15,301 - WARNING - Center dynamic (413.4, 832.5) outside reasonable die area bounds
+2025-07-14 18:21:15,302 - WARNING - Center dynamic (413.4, 832.5) outside reasonable die area bounds
+2025-07-14 18:21:15,303 - WARNING - Center dynamic (413.4, 832.5) outside reasonable die area bounds
+2025-07-14 18:21:19,537 - WARNING - Center dynamic (413.2, 834.4) outside reasonable die area bounds
+2025-07-14 18:21:19,539 - WARNING - Center dynamic (413.2, 834.4) outside reasonable die area bounds
+2025-07-14 18:21:19,540 - WARNING - Center dynamic (413.2, 834.4) outside reasonable die area bounds
+2025-07-14 18:21:20,084 - WARNING - Center dynamic (413.0, 835.8) outside reasonable die area bounds
+2025-07-14 18:21:20,085 - WARNING - Center dynamic (413.0, 835.8) outside reasonable die area bounds
+2025-07-14 18:21:20,086 - WARNING - Center dynamic (413.0, 835.8) outside reasonable die area bounds
+2025-07-14 18:21:23,348 - WARNING - Center dynamic (412.7, 837.1) outside reasonable die area bounds
+2025-07-14 18:21:23,351 - WARNING - Center dynamic (412.7, 837.1) outside reasonable die area bounds
+2025-07-14 18:21:23,352 - WARNING - Center dynamic (412.7, 837.1) outside reasonable die area bounds
+2025-07-14 18:21:24,346 - WARNING - Center dynamic (412.5, 838.1) outside reasonable die area bounds
+2025-07-14 18:21:29,426 - WARNING - Center dynamic (412.3, 838.9) outside reasonable die area bounds
+2025-07-14 18:21:29,427 - WARNING - Center dynamic (412.3, 838.9) outside reasonable die area bounds
+2025-07-14 18:21:29,429 - WARNING - Center dynamic (412.3, 838.9) outside reasonable die area bounds
+2025-07-14 18:21:32,664 - WARNING - Center dynamic (410.1, 839.1) outside reasonable die area bounds
+2025-07-14 18:21:32,665 - WARNING - Center dynamic (410.1, 839.1) outside reasonable die area bounds
+2025-07-14 18:21:32,665 - WARNING - Center dynamic (410.1, 839.1) outside reasonable die area bounds
+2025-07-14 18:22:02,153 - WARNING - Center dynamic (408.2, 839.1) outside reasonable die area bounds
+2025-07-14 18:22:02,155 - WARNING - Center dynamic (408.2, 839.1) outside reasonable die area bounds
+2025-07-14 18:22:02,156 - WARNING - Center dynamic (408.2, 839.1) outside reasonable die area bounds
+2025-07-14 18:22:02,903 - WARNING - Center dynamic (408.0, 836.4) outside reasonable die area bounds
+2025-07-14 18:22:02,904 - WARNING - Center dynamic (408.0, 836.4) outside reasonable die area bounds
+2025-07-14 18:22:02,907 - WARNING - Center dynamic (408.0, 836.4) outside reasonable die area bounds
+2025-07-14 18:22:13,167 - WARNING - Center dynamic (407.9, 833.9) outside reasonable die area bounds
+2025-07-14 18:22:13,169 - WARNING - Center preliminary (416.0, 839.6) outside reasonable die area bounds
+2025-07-14 18:22:13,171 - WARNING - Center dynamic (407.9, 833.9) outside reasonable die area bounds
+2025-07-14 18:22:13,172 - WARNING - Center preliminary (416.0, 839.6) outside reasonable die area bounds
+2025-07-14 18:22:13,173 - WARNING - Center dynamic (420.6, 840.6) is 41.9mm from true center (max allowed: 40.0mm)
+2025-07-14 18:22:13,175 - WARNING - Insufficient outer edges: 7 < 8 minimum
+2025-07-14 18:22:13,175 - WARNING - ✗ Insufficient coverage detected, iteration 1/2
+2025-07-14 18:22:15,896 - ERROR - Gap spiral scan failed: cannot access local variable 'last_height' where it is not associated with a value
+2025-07-14 18:22:22,193 - ERROR - Gap spiral scan failed: cannot access local variable 'last_height' where it is not associated with a value
+2025-07-14 18:22:22,195 - WARNING - No new edges found in gap filling, stopping iterations
+2025-07-14 18:22:22,282 - WARNING - Center preliminary (416.0, 839.6) outside reasonable die area bounds
+2025-07-14 18:22:22,283 - WARNING - Center dynamic (420.6, 840.6) is 41.9mm from true center (max allowed: 40.0mm)
+2025-07-14 18:22:22,284 - WARNING - Center ransac (406.0, 826.5) outside reasonable die area bounds
+2025-07-14 18:22:22,285 - WARNING - Center preliminary (416.0, 839.6) outside reasonable die area bounds
+2025-07-14 18:22:22,285 - WARNING - Center dynamic (420.6, 840.6) is 41.9mm from true center (max allowed: 40.0mm)
+2025-07-14 18:22:22,286 - WARNING - Center ransac (406.0, 826.5) outside reasonable die area bounds
+2025-07-14 18:22:22,287 - WARNING - Center preliminary (416.0, 839.6) outside reasonable die area bounds
+2025-07-14 18:22:22,288 - WARNING - Center ransac (406.0, 826.5) outside reasonable die area bounds
+2025-07-14 18:22:22,289 - WARNING - LOW OUTER EDGE COUNT - Consider:
+2025-07-14 18:22:22,289 - WARNING -   - Adjusting height thresholds
+2025-07-14 18:22:22,291 - WARNING -   - Expanding radius acceptance range
+2025-07-14 18:22:22,291 - WARNING -   - Improving scan coverage
+2025-07-14 18:22:22,291 - ERROR - Insufficient outer edges for center calculation: 4 < 5
+2025-07-14 18:22:22,292 - ERROR - Center calculation failed
+Die scanning debug failed

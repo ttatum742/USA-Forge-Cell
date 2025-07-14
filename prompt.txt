@@ -1,4 +1,5 @@
-Today's tasks are as follows:
+I have changed things around a little bit. I reverted the changes we have made to the 5pass program back to when the x pass works. I kept our changed program in diescanner_keyence_db.py, and the unchanged program in dieScanner_keyence_dbGoodcalc.py. Keep making changes to diescanner_keyence_db.py going forward. Here's what I need you to do:
 
-1) Looking at the visualization of the die scan results, I see that we need to have a tighter constraint on what is an outer or inner edge. The most recent die scan results seem to indicate that if we were correctly classifying the edges, the circle center calculation would be spot on. How are we determining what is an inner or outer edge right now? How can we more accurately classify the edges?
-
+-Fix the class error shown in err.txt
+-Diescanner_keyence_db.py is still moving us way too far in +x when starting the initial x-pass scan. It looks like it started somewhere around 85-95mm away from the actual die center. The program was aborted early, so there is no data to review. Come up with a plan to fix this issue. 
+-The spiral scanning is eating up a TON of time. Come up with a plan to reduce the time spent scanning without affecting the calculation accuracy. 
