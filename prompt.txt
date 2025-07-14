@@ -1,1 +1,4 @@
-see err.txt for the results of the last run. The resolution is better in y, but worse in x now that we have ditched radial. Take a look at the ascii map of the die and use that for debugging. Need to come up with a plan to increase the edge resolution and perimeter coverage. What are your thoughts on doing small (<10mm diameter at its largest) spirals outward around the detected edges in order to capture more of the surrounding good edges? Help me come up with a plan to successfully implement this strategy if it's a good idea. I am open to any other recommendations on how to improve the error rate of this system. 
+Today's tasks are as follows:
+
+1) Looking at the visualization of the die scan results, I see that we need to have a tighter constraint on what is an outer or inner edge. The most recent die scan results seem to indicate that if we were correctly classifying the edges, the circle center calculation would be spot on. How are we determining what is an inner or outer edge right now? How can we more accurately classify the edges?
+

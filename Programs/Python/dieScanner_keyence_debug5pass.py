@@ -351,6 +351,13 @@ class ContinuousDieScanner:
         self.interior_edges = []  # Detected interior edges (for debugging)
         self.filtered_edge_count = 0  # Track how many edges were filtered out
         
+        # Enhanced edge classification
+        self.use_enhanced_classification = True  # Enable enhanced geometric edge classification
+        
+        # Multi-scale edge detection
+        self.use_multiscale_detection = True  # Enable multi-scale edge detection
+        self.edge_detection_scales = [1.0, 1.5, 2.0]  # Height threshold multipliers for multi-scale detection
+        
         # Background position tracking
         self.position_thread = None
         
@@ -1023,39 +1030,77 @@ class ContinuousDieScanner:
             # Gradient-based edge detection (requires sufficient history)
             gradient_strength = self._calculate_gradient_strength()
             
-            # Check for significant height change
-            if abs(height_diff) > adaptive_threshold:
-                # Calculate edge quality score
-                edge_quality = self._calculate_edge_quality(x, y, height, last_height, height_diff, gradient_strength)
-                
-                # Only accept high-quality edges
-                if edge_quality >= self.min_edge_quality:
-                    # Determine edge type
-                    edge_type = 'drop_off' if height_diff < 0 else 'rise'
+            # Multi-scale edge detection
+            if self.use_multiscale_detection:
+                detected_edge = self._multiscale_edge_detection(x, y, height, last_height, height_diff, gradient_strength, adaptive_threshold)
+            else:
+                detected_edge = self._single_scale_edge_detection(x, y, height, last_height, height_diff, gradient_strength, adaptive_threshold)
+            
+            if detected_edge:
+                # Multi-point edge confirmation - classify later in enhanced_edge_classification()
+                if self._confirm_edge_point(detected_edge):
+                    # Just add to edge_points list - classification happens later
+                    self.edge_points.append(detected_edge)
+                    logger.info(f"EDGE DETECTED ({detected_edge.edge_type}): ({x:.1f}, {y:.1f}) - {height_diff:.1f}mm, quality={detected_edge.confidence:.2f}")
                     
-                    # Create edge point with enhanced confidence calculation
-                    confidence = min(edge_quality * (abs(height_diff) / adaptive_threshold), 1.0)
-                    
-                    edge_point = EdgePoint(
-                        x=x, y=y, edge_type=edge_type, confidence=confidence
-                    )
-                    
-                    # Multi-point edge confirmation - classify later in filter_interior_edges()
-                    if self._confirm_edge_point(edge_point):
-                        # Just add to edge_points list - classification happens later
-                        self.edge_points.append(edge_point)
-                        logger.info(f"EDGE DETECTED ({edge_type}): ({x:.1f}, {y:.1f}) - {height_diff:.1f}mm, quality={edge_quality:.2f}")
-                        
-                        # Note: Classification as interior/exterior happens later in filter_interior_edges()
-                    else:
-                        logger.debug(f"Edge rejected by confirmation: ({x:.1f}, {y:.1f}) - {height_diff:.1f}mm")
+                    # Note: Classification as interior/exterior happens later in enhanced_edge_classification()
                 else:
-                    logger.debug(f"Edge rejected by quality: ({x:.1f}, {y:.1f}) - quality={edge_quality:.2f} < {self.min_edge_quality}")
+                    logger.debug(f"Edge rejected by confirmation: ({x:.1f}, {y:.1f}) - {height_diff:.1f}mm")
             
         elif last_height is not None and last_height <= -999:
             logger.debug(f"Skipping edge detection - invalid previous height: {last_height}")
         
         return height  # Return current height as new last_height
+
+    def _single_scale_edge_detection(self, x, y, height, last_height, height_diff, gradient_strength, adaptive_threshold):
+        """Single-scale edge detection (original method)"""
+        # Check for significant height change
+        if abs(height_diff) > adaptive_threshold:
+            # Calculate edge quality score
+            edge_quality = self._calculate_edge_quality(x, y, height, last_height, height_diff, gradient_strength)
+            
+            # Only accept high-quality edges
+            if edge_quality >= self.min_edge_quality:
+                # Determine edge type
+                edge_type = 'drop_off' if height_diff < 0 else 'rise'
+                
+                # Create edge point with enhanced confidence calculation
+                confidence = min(edge_quality * (abs(height_diff) / adaptive_threshold), 1.0)
+                
+                return EdgePoint(x=x, y=y, edge_type=edge_type, confidence=confidence)
+        
+        return None
+    
+    def _multiscale_edge_detection(self, x, y, height, last_height, height_diff, gradient_strength, adaptive_threshold):
+        """Multi-scale edge detection with different sensitivity levels"""
+        best_edge = None
+        best_quality = 0.0
+        
+        # Test different scales
+        for scale in self.edge_detection_scales:
+            scaled_threshold = adaptive_threshold * scale
+            
+            # Check if edge is detected at this scale
+            if abs(height_diff) > scaled_threshold:
+                # Calculate edge quality with scale factor
+                edge_quality = self._calculate_edge_quality(x, y, height, last_height, height_diff, gradient_strength)
+                
+                # Scale adjustment factor - prefer edges detected at multiple scales
+                scale_factor = 1.0 / scale  # Lower scale (more sensitive) gets higher weight
+                adjusted_quality = edge_quality * scale_factor
+                
+                # Only accept high-quality edges
+                if adjusted_quality >= self.min_edge_quality and adjusted_quality > best_quality:
+                    # Determine edge type
+                    edge_type = 'drop_off' if height_diff < 0 else 'rise'
+                    
+                    # Create edge point with enhanced confidence calculation
+                    confidence = min(adjusted_quality * (abs(height_diff) / scaled_threshold), 1.0)
+                    
+                    best_edge = EdgePoint(x=x, y=y, edge_type=edge_type, confidence=confidence)
+                    best_quality = adjusted_quality
+        
+        return best_edge
 
     def _calculate_adaptive_threshold(self):
         """Calculate adaptive threshold based on local height variance"""
@@ -1299,6 +1344,399 @@ class ContinuousDieScanner:
         
         logger.info(f"Edge filtering complete: {len(self.outer_edges)} outer edges, {len(self.interior_edges)} interior edges filtered")
     
+    def enhanced_edge_classification(self):
+        """Enhanced edge classification using geometric validation and iterative refinement"""
+        if not self.edge_points:
+            return
+        
+        logger.info("Starting enhanced edge classification...")
+        
+        # Phase 1: Analyze current edge distribution
+        edge_analysis = self._analyze_edge_distribution()
+        
+        # Phase 2: Geometric validation of edge sets
+        validated_edges = self._geometric_edge_validation(edge_analysis)
+        
+        # Phase 3: Iterative center refinement
+        refined_center, refined_edges = self._iterative_center_refinement(validated_edges)
+        
+        # Phase 4: Quality-based final classification
+        self._quality_based_classification(refined_center, refined_edges)
+        
+        logger.info(f"Enhanced classification complete: {len(self.outer_edges)} outer edges, {len(self.interior_edges)} interior edges")
+        
+        # Run diagnostics
+        self.diagnose_edge_classification()
+    
+    def _analyze_edge_distribution(self):
+        """Analyze current edge distribution to identify classification issues"""
+        if not self.edge_points:
+            return {}
+        
+        # Calculate distances from preliminary center
+        prelim_center_x, prelim_center_y = self._estimate_dynamic_center()
+        
+        edge_data = []
+        for edge in self.edge_points:
+            distance = np.sqrt((edge.x - prelim_center_x)**2 + (edge.y - prelim_center_y)**2)
+            angle = np.arctan2(edge.y - prelim_center_y, edge.x - prelim_center_x)
+            
+            edge_data.append({
+                'edge': edge,
+                'distance': distance,
+                'angle': angle,
+                'angle_deg': np.degrees(angle) % 360
+            })
+        
+        # Group edges by distance ranges
+        distance_groups = {
+            'very_close': [e for e in edge_data if e['distance'] < 35],
+            'close': [e for e in edge_data if 35 <= e['distance'] < 45],
+            'target_range': [e for e in edge_data if 45 <= e['distance'] <= 70],
+            'far': [e for e in edge_data if 70 < e['distance'] < 80],
+            'very_far': [e for e in edge_data if e['distance'] >= 80]
+        }
+        
+        # Analyze angular distribution
+        angles = [e['angle_deg'] for e in edge_data]
+        angular_gaps = self._find_angular_gaps(angles)
+        
+        analysis = {
+            'prelim_center': (prelim_center_x, prelim_center_y),
+            'edge_data': edge_data,
+            'distance_groups': distance_groups,
+            'angular_gaps': angular_gaps,
+            'total_edges': len(edge_data)
+        }
+        
+        # Log analysis results
+        logger.info(f"Edge distribution analysis:")
+        for group_name, edges in distance_groups.items():
+            if edges:
+                logger.info(f"  {group_name}: {len(edges)} edges")
+        
+        return analysis
+    
+    def _geometric_edge_validation(self, edge_analysis):
+        """Validate edges using geometric properties"""
+        edge_data = edge_analysis['edge_data']
+        
+        if len(edge_data) < 4:
+            return [e['edge'] for e in edge_data]
+        
+        # Extract coordinates
+        points = np.array([[e['edge'].x, e['edge'].y] for e in edge_data])
+        
+        # Use RANSAC to find best circle fit
+        x, y = points[:, 0], points[:, 1]
+        center_x, center_y, radius, inliers = self.ransac_circle_fit(x, y, max_iterations=50)
+        
+        logger.info(f"RANSAC circle fit: center=({center_x:.1f}, {center_y:.1f}), radius={radius:.1f}mm")
+        logger.info(f"RANSAC inliers: {len(inliers)}/{len(edge_data)} edges")
+        
+        # Validate circle parameters
+        if radius < 30 or radius > 80:
+            logger.warning(f"RANSAC radius {radius:.1f}mm outside expected range, using fallback")
+            return [e['edge'] for e in edge_data]
+        
+        # Return edges that are inliers to the best circle
+        validated_edges = [edge_data[i]['edge'] for i in inliers]
+        
+        # Add nearby edges that might have been missed
+        for i, edge_info in enumerate(edge_data):
+            if i not in inliers:
+                distance_to_circle = abs(np.sqrt((edge_info['edge'].x - center_x)**2 + 
+                                               (edge_info['edge'].y - center_y)**2) - radius)
+                if distance_to_circle < 5.0:  # Within 5mm of circle
+                    validated_edges.append(edge_info['edge'])
+                    logger.info(f"Added nearby edge: ({edge_info['edge'].x:.1f}, {edge_info['edge'].y:.1f}) - {distance_to_circle:.1f}mm from circle")
+        
+        return validated_edges
+    
+    def _iterative_center_refinement(self, validated_edges, max_iterations=3):
+        """Iteratively refine center estimate and reclassify edges"""
+        if len(validated_edges) < 4:
+            return self._estimate_dynamic_center(), validated_edges
+        
+        current_edges = validated_edges.copy()
+        
+        for iteration in range(max_iterations):
+            # Calculate current center
+            points = np.array([[e.x, e.y] for e in current_edges])
+            center_x, center_y = self.kasa_circle_fit(points[:, 0], points[:, 1])
+            
+            # Calculate distances and identify outliers
+            distances = []
+            for edge in current_edges:
+                dist = np.sqrt((edge.x - center_x)**2 + (edge.y - center_y)**2)
+                distances.append(dist)
+            
+            distances = np.array(distances)
+            median_distance = np.median(distances)
+            mad = np.median(np.abs(distances - median_distance))
+            
+            # Remove outliers (edges too far from median distance)
+            outlier_threshold = median_distance + 3 * mad
+            inlier_threshold = median_distance - 3 * mad
+            
+            refined_edges = []
+            for i, edge in enumerate(current_edges):
+                if inlier_threshold <= distances[i] <= outlier_threshold:
+                    refined_edges.append(edge)
+                else:
+                    logger.debug(f"Iteration {iteration+1}: Removed outlier edge ({edge.x:.1f}, {edge.y:.1f}) - dist={distances[i]:.1f}mm")
+            
+            if len(refined_edges) < 4:
+                break
+            
+            # Check for convergence
+            if len(refined_edges) == len(current_edges):
+                logger.info(f"Center refinement converged after {iteration+1} iterations")
+                break
+            
+            current_edges = refined_edges
+            logger.info(f"Iteration {iteration+1}: {len(current_edges)} edges, center=({center_x:.1f}, {center_y:.1f})")
+        
+        return (center_x, center_y), current_edges
+    
+    def _quality_based_classification(self, refined_center, refined_edges):
+        """Final classification based on edge quality scores"""
+        center_x, center_y = refined_center
+        
+        # Clear previous classifications
+        self.outer_edges.clear()
+        self.interior_edges.clear()
+        
+        # Calculate quality scores for all original edges
+        edge_scores = []
+        for edge in self.edge_points:
+            quality_score = self._calculate_enhanced_edge_quality(edge, center_x, center_y, refined_edges)
+            edge_scores.append((edge, quality_score))
+        
+        # Sort by quality score
+        edge_scores.sort(key=lambda x: x[1], reverse=True)
+        
+        # Classify edges based on quality and geometric criteria
+        for edge, quality in edge_scores:
+            distance = np.sqrt((edge.x - center_x)**2 + (edge.y - center_y)**2)
+            
+            # Enhanced classification criteria
+            is_outer = self._is_outer_edge_enhanced(edge, center_x, center_y, quality, distance, refined_edges)
+            
+            if is_outer:
+                self.outer_edges.append(edge)
+                logger.info(f"OUTER edge: ({edge.x:.1f}, {edge.y:.1f}) - dist={distance:.1f}mm, quality={quality:.3f}")
+            else:
+                self.interior_edges.append(edge)
+                logger.debug(f"INTERIOR edge: ({edge.x:.1f}, {edge.y:.1f}) - dist={distance:.1f}mm, quality={quality:.3f}")
+    
+    def _calculate_enhanced_edge_quality(self, edge, center_x, center_y, reference_edges):
+        """Calculate enhanced quality score for edge classification"""
+        distance = np.sqrt((edge.x - center_x)**2 + (edge.y - center_y)**2)
+        
+        quality = 0.0
+        
+        # Factor 1: Base confidence from original detection
+        quality += edge.confidence * 0.3
+        
+        # Factor 2: Distance from expected radius
+        if reference_edges:
+            ref_distances = [np.sqrt((e.x - center_x)**2 + (e.y - center_y)**2) for e in reference_edges]
+            expected_radius = np.median(ref_distances)
+            distance_error = abs(distance - expected_radius)
+            distance_factor = max(0, 1.0 - distance_error / (expected_radius * 0.3))
+            quality += distance_factor * 0.4
+        else:
+            # Fallback to original distance criteria
+            if 45 <= distance <= 70:
+                quality += 0.4
+        
+        # Factor 3: Consistency with nearby edges
+        consistency_score = self._calculate_local_consistency(edge, center_x, center_y, reference_edges)
+        quality += consistency_score * 0.2
+        
+        # Factor 4: Angular coverage contribution
+        angular_score = self._calculate_angular_contribution(edge, center_x, center_y, reference_edges)
+        quality += angular_score * 0.1
+        
+        return min(quality, 1.0)
+    
+    def _is_outer_edge_enhanced(self, edge, center_x, center_y, quality, distance, reference_edges):
+        """Enhanced criteria for determining if edge is outer perimeter edge"""
+        
+        # Minimum quality threshold
+        if quality < 0.4:
+            return False
+        
+        # Distance criteria - more flexible based on reference edges
+        if reference_edges:
+            ref_distances = [np.sqrt((e.x - center_x)**2 + (e.y - center_y)**2) for e in reference_edges]
+            if ref_distances:
+                median_radius = np.median(ref_distances)
+                std_radius = np.std(ref_distances)
+                
+                # Allow edges within 2 standard deviations of median
+                min_dist = max(35, median_radius - 2 * std_radius)
+                max_dist = min(80, median_radius + 2 * std_radius)
+                
+                if not (min_dist <= distance <= max_dist):
+                    return False
+        else:
+            # Fallback to original criteria
+            if not (35 <= distance <= 80):
+                return False
+        
+        # Angular spacing - avoid clustering
+        angle = np.arctan2(edge.y - center_y, edge.x - center_x)
+        min_angular_separation = np.radians(20)  # 20 degrees
+        
+        for existing_edge in self.outer_edges:
+            existing_angle = np.arctan2(existing_edge.y - center_y, existing_edge.x - center_x)
+            angular_diff = abs(angle - existing_angle)
+            angular_diff = min(angular_diff, 2 * np.pi - angular_diff)  # Handle wrap-around
+            
+            if angular_diff < min_angular_separation:
+                # Keep the higher quality edge
+                existing_quality = self._calculate_enhanced_edge_quality(existing_edge, center_x, center_y, reference_edges)
+                if quality <= existing_quality:
+                    return False
+                else:
+                    # Remove the lower quality edge
+                    if existing_edge in self.outer_edges:
+                        self.outer_edges.remove(existing_edge)
+                        self.interior_edges.append(existing_edge)
+        
+        return True
+    
+    def _calculate_local_consistency(self, edge, center_x, center_y, reference_edges):
+        """Calculate how consistent edge is with nearby reference edges"""
+        if not reference_edges:
+            return 0.5
+        
+        edge_angle = np.arctan2(edge.y - center_y, edge.x - center_x)
+        edge_distance = np.sqrt((edge.x - center_x)**2 + (edge.y - center_y)**2)
+        
+        nearby_edges = []
+        for ref_edge in reference_edges:
+            ref_angle = np.arctan2(ref_edge.y - center_y, ref_edge.x - center_x)
+            angular_diff = abs(edge_angle - ref_angle)
+            angular_diff = min(angular_diff, 2 * np.pi - angular_diff)
+            
+            if angular_diff < np.radians(45):  # Within 45 degrees
+                nearby_edges.append(ref_edge)
+        
+        if not nearby_edges:
+            return 0.3
+        
+        # Calculate distance consistency
+        nearby_distances = [np.sqrt((e.x - center_x)**2 + (e.y - center_y)**2) for e in nearby_edges]
+        avg_distance = np.mean(nearby_distances)
+        distance_consistency = max(0, 1.0 - abs(edge_distance - avg_distance) / (avg_distance * 0.2))
+        
+        return distance_consistency
+    
+    def _calculate_angular_contribution(self, edge, center_x, center_y, reference_edges):
+        """Calculate how much this edge contributes to angular coverage"""
+        if not reference_edges:
+            return 0.5
+        
+        edge_angle = np.arctan2(edge.y - center_y, edge.x - center_x)
+        ref_angles = [np.arctan2(e.y - center_y, e.x - center_x) for e in reference_edges]
+        
+        # Find closest reference angles
+        angle_diffs = [abs(edge_angle - ref_angle) for ref_angle in ref_angles]
+        angle_diffs = [min(diff, 2 * np.pi - diff) for diff in angle_diffs]
+        
+        min_separation = min(angle_diffs) if angle_diffs else np.pi
+        
+        # Reward edges that fill gaps
+        if min_separation > np.radians(30):  # 30 degrees
+            return 1.0
+        elif min_separation > np.radians(15):  # 15 degrees
+            return 0.7
+        else:
+            return 0.3
+    
+    def _find_angular_gaps(self, angles):
+        """Find gaps in angular coverage"""
+        if len(angles) < 2:
+            return []
+        
+        sorted_angles = sorted(angles)
+        gaps = []
+        
+        for i in range(len(sorted_angles)):
+            next_i = (i + 1) % len(sorted_angles)
+            gap = sorted_angles[next_i] - sorted_angles[i]
+            if gap < 0:
+                gap += 360
+            gaps.append(gap)
+        
+        return gaps
+
+    def diagnose_edge_classification(self):
+        """Diagnostic function to analyze edge classification performance"""
+        if not self.edge_points:
+            logger.info("No edges detected for diagnosis")
+            return
+        
+        logger.info("=== EDGE CLASSIFICATION DIAGNOSTICS ===")
+        
+        # Basic statistics
+        total_edges = len(self.edge_points) + len(self.interior_edges)
+        outer_edges = len(self.outer_edges)
+        interior_edges = len(self.interior_edges)
+        
+        logger.info(f"Total edges detected: {total_edges}")
+        logger.info(f"Outer edges (used): {outer_edges} ({outer_edges/total_edges*100:.1f}%)")
+        logger.info(f"Interior edges (filtered): {interior_edges} ({interior_edges/total_edges*100:.1f}%)")
+        
+        # Distance distribution analysis
+        if self.outer_edges:
+            center_x, center_y = self._estimate_dynamic_center()
+            outer_distances = [np.sqrt((e.x - center_x)**2 + (e.y - center_y)**2) for e in self.outer_edges]
+            
+            logger.info(f"Outer edge distances: min={min(outer_distances):.1f}mm, max={max(outer_distances):.1f}mm, avg={np.mean(outer_distances):.1f}mm")
+            logger.info(f"Expected radius: {self.expected_die_radius:.1f}mm")
+            
+            # Angular coverage analysis
+            angles = []
+            for edge in self.outer_edges:
+                angle = np.arctan2(edge.y - center_y, edge.x - center_x)
+                angles.append(np.degrees(angle) % 360)
+            
+            if len(angles) > 1:
+                angles.sort()
+                gaps = []
+                for i in range(len(angles)):
+                    next_i = (i + 1) % len(angles)
+                    gap = angles[next_i] - angles[i]
+                    if gap < 0:
+                        gap += 360
+                    gaps.append(gap)
+                
+                max_gap = max(gaps)
+                total_coverage = 360 - max_gap
+                
+                logger.info(f"Angular coverage: {total_coverage:.1f}°, largest gap: {max_gap:.1f}°")
+                
+                # Quality distribution
+                qualities = [e.confidence for e in self.outer_edges]
+                logger.info(f"Edge quality: min={min(qualities):.2f}, max={max(qualities):.2f}, avg={np.mean(qualities):.2f}")
+        
+        # Recommendations
+        if outer_edges < 6:
+            logger.warning("LOW OUTER EDGE COUNT - Consider:")
+            logger.warning("  - Adjusting height thresholds")
+            logger.warning("  - Expanding radius acceptance range")
+            logger.warning("  - Improving scan coverage")
+        
+        if interior_edges > outer_edges * 2:
+            logger.warning("HIGH INTERIOR EDGE RATIO - Consider:")
+            logger.warning("  - Tightening quality thresholds")
+            logger.warning("  - Improving preliminary center estimation")
+            logger.warning("  - Adding more geometric constraints")
+
     def validate_perimeter_continuity(self):
         """Check if outer edges form a continuous perimeter with sufficient coverage"""
         if len(self.outer_edges) < self.min_perimeter_edges:
@@ -1615,7 +2053,7 @@ class ContinuousDieScanner:
         spiral_radius = 5.0  # mm - maximum radius of spiral 
         spiral_step = 0.25    # mm - high precision step size
         spiral_turns = 3   # number of turns in spiral
-        points_per_turn = 16  # number of measurement points per turn
+        points_per_turn = 32  # number of measurement points per turn
         
         refined_edges_added = 0
         original_edge_count = len(self.edge_points)
@@ -1767,7 +2205,7 @@ class ContinuousDieScanner:
         
         # Fill each gap with targeted linear scan
         gaps_filled = 0
-        scan_radius = self.expected_die_radius + 5.0  # Start outside expected edge
+        scan_radius = self.expected_die_radius + 10.0  # Start outside expected edge
         
         for gap_center_deg, gap_size in gaps_to_fill:
             logger.info(f"Filling gap at {gap_center_deg:.1f}° (size: {gap_size:.1f}°)")
@@ -2146,7 +2584,10 @@ class ContinuousDieScanner:
     def calculate_final_center(self):
         """Calculate die center from OUTER EDGE points only (filtered)"""
         # Apply final edge filtering to ensure we only use outer edges
-        self.filter_interior_edges()
+        if self.use_enhanced_classification:
+            self.enhanced_edge_classification()
+        else:
+            self.filter_interior_edges()
         
         logger.info(f"Starting center calculation with {len(self.outer_edges)} outer edges (filtered from {len(self.edge_points) + len(self.interior_edges)} total)")
         
