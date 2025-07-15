@@ -36,6 +36,7 @@ run_derivative_calc.bat
   - R[60-65]: Joint angles
   - R[70-72]: Cartesian forces (calculated)
   - R[80-91]: Torque derivatives (written to robot)
+  - All registers and position register assignments shall be maintained and recorded in the relevant csv file, found in the registers_io folder
 
 ### Robot Program Structure
 - **MAIN.LS**: Master program orchestrating dual-furnace workflow
