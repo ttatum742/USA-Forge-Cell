@@ -43,8 +43,8 @@ logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s -
 logger = logging.getLogger(__name__)
 
 # Set cpppo/EtherNet-IP logging to DEBUG to reduce terminal noise
-logging.getLogger('cpppo').setLevel(logging.DEBUG)
-logging.getLogger('cpppo.server.enip').setLevel(logging.DEBUG)
+#logging.getLogger('cpppo').setLevel(logging.DEBUG)
+#logging.getLogger('cpppo.server.enip').setLevel(logging.DEBUG)
 
 @dataclass
 class ScanPoint:

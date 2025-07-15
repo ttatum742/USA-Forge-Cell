@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -453,7 +453,7 @@ class ContinuousDieScanner:
         
         # Scanning parameters
         y_scan_distance = 120.0  # 5 inches in mm
-        scan_step = 0.5  # mm - initial scan step distance
+        scan_step = 1.2  # mm - initial scan step distance
         
         # NEW SCAN PATTERN: After calibration, move +5" in Y, +5" in X
         # This becomes the starting position for Pass 1
@@ -615,7 +615,7 @@ class ContinuousDieScanner:
         prelim_center_x, prelim_center_y = self.get_preliminary_center_from_5_pass()
         
         # ADAPTIVE scanning parameters based on detected edges from 5-pass
-        focused_scan_distance = 20.0  # total x scan length
+        focused_scan_distance = 25.4  # total x scan length
         x_step_size = 0.5  # small steps for refined edge scanning
         
         # Calculate optimal scanning position based on detected outer edges
@@ -628,12 +628,12 @@ class ContinuousDieScanner:
             
             # INWARD STRATEGY: Start just outside average detected edge radius, not max
             # This avoids peripheral equipment while ensuring we cross the actual die edge
-            edge_crossing_offset = avg_edge_radius + 15.0  # Start outside average edge
+            edge_crossing_offset = avg_edge_radius + 25.4  # Start outside average edge
             logger.info(f"INWARD X-scan positioning: avg edge radius={avg_edge_radius:.1f}mm, max={max_edge_radius:.1f}mm")
             logger.info(f"X-scan will start at {edge_crossing_offset:.1f}mm from center and scan {focused_scan_distance:.1f}mm INWARD toward center")
         else:
             # Fallback to default positioning if no edges detected yet
-            edge_crossing_offset = 57.0  # mm - conservative fallback
+            edge_crossing_offset = 76.2  # mm - conservative fallback
             logger.warning("No outer edges detected yet, using default X-scan positioning")
         
         # Position passes around preliminary center (not original start)
@@ -750,124 +750,6 @@ class ContinuousDieScanner:
         
         return scan_count, last_height
     
-    # DISABLED: Radial scanning caused inconsistent readings - using Y+X scanning only
-    def perform_radial_validation_scan_DISABLED(self, reference_x, reference_y, reference_z, scan_step):
-        """Perform radial spoke scanning in OUTER EDGE area to validate perimeter"""
-        radial_scan_count = 0
-        last_height = None
-        
-        # Get current center estimate for radial scanning
-        estimated_center_x, estimated_center_y = self._estimate_dynamic_center()
-        
-        # Define 6 radial directions (every 60 degrees) - FOCUSED on outer edge area
-        radial_angles = [0, 60, 120, 180, 240, 300]  # degrees
-        
-        # INWARD STRATEGY: Start just outside detected edges and scan inward toward center
-        if len(self.outer_edges) > 0:
-            # Use actual detected edge distances to position radial scans
-            edge_distances = [np.sqrt((edge.x - estimated_center_x)**2 + (edge.y - estimated_center_y)**2) 
-                             for edge in self.outer_edges]
-            avg_edge_radius = np.mean(edge_distances)
-            
-            # Start just outside average edge radius and scan inward
-            radial_start_radius = avg_edge_radius + 10.0  # Start 10mm outside average edge
-            radial_scan_length = 25.0  # Scan 25mm inward toward center
-            logger.info(f"Radial INWARD scanning: avg edge radius={avg_edge_radius:.1f}mm, starting {radial_start_radius:.1f}mm from center")
-        else:
-            # Fallback if no edges detected
-            radial_start_radius = 60.0  # mm - conservative fallback
-            radial_scan_length = 25.0   # mm - scan inward
-            logger.warning("No outer edges for radial positioning, using fallback")
-            
-        radial_step_size = 0.5  # mm - refined steps for edge detection
-        
-        logger.info(f"Radial INWARD scanning from center: ({estimated_center_x:.1f}, {estimated_center_y:.1f})")
-        logger.info(f"Radial scan parameters: START at {radial_start_radius:.1f}mm, scan {radial_scan_length:.1f}mm INWARD toward center")
-        
-        for i, angle in enumerate(radial_angles):
-            logger.info(f"Radial spoke {i+1}/6 at {angle}° in outer edge area")
-            
-            try:
-                # Execute radial spoke scan in outer edge area
-                spoke_count, last_height = self._execute_radial_spoke(
-                    estimated_center_x, estimated_center_y, reference_z,
-                    angle, radial_scan_length, radial_step_size, f"spoke-{angle}°", last_height, radial_start_radius)
-                
-                radial_scan_count += spoke_count
-                logger.info(f"Radial spoke {angle}° completed: {spoke_count} points")
-                
-            except Exception as e:
-                logger.error(f"Radial spoke {angle}° failed: {e}")
-        
-        logger.info(f"Radial validation scanning complete: {radial_scan_count} additional points")
-        return radial_scan_count
-    
-    # DISABLED: Part of radial scanning - no longer used
-    def _execute_radial_spoke_DISABLED(self, center_x, center_y, center_z, angle_deg, scan_length, step_size, spoke_name, last_height, start_radius=40.0):
-        """Execute a single radial spoke scan INWARD from detected edge area toward center"""
-        angle_rad = np.radians(angle_deg)
-        radius_steps = int(scan_length / step_size)
-        scan_count = 0
-        
-        end_radius = start_radius - scan_length  # End closer to center
-        logger.info(f"Radial spoke {angle_deg}°: scanning INWARD from {start_radius:.1f}mm to {end_radius:.1f}mm radius")
-        
-        for step in range(radius_steps + 1):
-            if not self.scanning_active:
-                break
-                
-            try:
-                # Calculate current radius and position - SCAN INWARD toward center
-                current_radius = start_radius - (step * step_size)  # Subtract to go inward
-                
-                # Calculate X,Y position along radial line
-                current_x = center_x + current_radius * np.cos(angle_rad)
-                current_y = center_y + current_radius * np.sin(angle_rad)
-                
-                # Move robot to position using existing protocol
-                self.robot._write_parameter('ds_next_pos_x', current_x)
-                self.robot._write_parameter('ds_next_pos_y', current_y) 
-                self.robot._write_parameter('ds_next_pos_z', center_z)
-                self.robot._write_parameter('ds_status', 11)  # Signal move request
-                
-                # Wait for move completion
-                move_timeout = 10.0
-                move_start = time.time()
-                while time.time() - move_start < move_timeout:
-                    status = self.robot._read_parameter('ds_status')
-                    if status == 10:  # Move complete
-                        break
-                    time.sleep(0.05)
-                else:
-                    logger.warning(f"Move timeout in {spoke_name} step {step}")
-                    continue
-                
-                # Take measurement
-                height = self.arduino.read_height()
-                
-                if height > -999:
-                    scan_point = ScanPoint(
-                        x=current_x, y=current_y, z=center_z,
-                        height=height,
-                        is_valid=True,
-                        timestamp=time.time()
-                    )
-                    self.scan_points.append(scan_point)
-                    scan_count += 1
-                    
-                    # Edge detection
-                    last_height = self._detect_edges(current_x, current_y, height, last_height)
-                
-                # Log progress periodically
-                if step % 10 == 0:
-                    logger.debug(f"{spoke_name} step {step}: r={current_radius:.1f}mm, height={height:.1f}mm")
-                    
-            except Exception as e:
-                logger.error(f"Error in {spoke_name} step {step}: {e}")
-                continue
-        
-        return scan_count, last_height
-
     def _execute_scan_pass(self, start_x, start_y, start_z, y_distance, step_size, direction, pass_num, scan_count, last_height):
         """Execute a single scan pass"""
         y_steps = int(y_distance / step_size)
