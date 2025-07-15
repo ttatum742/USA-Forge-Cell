@@ -1,0 +1,5 @@
+# Production requirements for diescanprod package
+cpppo>=4.0.0
+numpy>=1.20.0
+pyserial>=3.5
+click>=8.0.0
