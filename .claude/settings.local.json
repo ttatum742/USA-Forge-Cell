@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(rm:*)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(mkdir:*)",
+      "Bash(conda activate:*)",
+      "Bash(pip3 install:*)"
     ],
     "deny": []
   }

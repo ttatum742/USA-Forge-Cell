@@ -1,0 +1,53 @@
+﻿reg_desc,old_assign,new_assign
+die scan command,150,86
+die scan status,151,87
+die scan current X position,152,88
+die scan current Y position,153,89
+die scan current Z position,154,90
+die scan measurement point counter,155,91
+die scan total points planned,156,92
+die scan center X result,157,93
+die scan center Y result,158,94
+die scan average die height,159,95
+die scan confidence level,160,96
+die scan grid size,170,97
+die scan step size,171,98
+die scan start offset,172,99
+die scan confirm radius,173,100
+die scan confirm points,174,101
+die scan row counter,175,102
+die scan column counter,176,103
+die scan calculated X position,177,104
+die scan calculated Y position,178,105
+die scan point counter confirmation,179,106
+die scan angle calculation,180,107
+die scan logging registers,190-200,108-118
+die scan zone map points counter,300,119
+die scan die face count,301,120
+die scan die face sum,302,121
+die scan Z offset,303,122
+die scan X scan counter,310,123
+die scan Y scan counter,311,124
+die scan zone mapping data,320-329,125-136
+die scan face height calculations,330-339,137-139
+die scan measurement result,400,140
+die scan measure trigger,401,141
+die scan measure complete,402,142
+die scan laser reading,403,143
+die scan measurement classification,410-429,144-153
+die scan zone analysis,430-439,154-160
+die scan well edge point storage,350-399,161-180
+die scan well edge center,N/A,181
+die scan next position components,N/A,182-184
+die scan backup grid scan,440-449,185-189
+sensor jig pickup position,N/A,PR35
+die scan start position,N/A,PR36
+scan point calc position,N/A,PR37
+die center est position,N/A,PR38
+sensor approach position,N/A,PR39
+sensor retract position,N/A,PR40
+die scan offset position,N/A,PR41
+continuous scan start position,N/A,PR42
+edge scan ref position,N/A,PR43
+scan complete position,N/A,PR44
+sensor calibrate position,N/A,PR45

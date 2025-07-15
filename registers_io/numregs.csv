@@ -1,0 +1,214 @@
+﻿regNum,src,name,description,type
+1,plc,part_length,input in inches,real
+2,plc,rod_diameter,input in inches ,real
+3,plc,head_type,,int
+4,plc,runqty,amount of parts run,int
+5,robot,parts_remaining,changes in increment_count,int
+6,robot,rowcount,indexes rows in main loop,int
+7,robot,colcount,indexes cols in main loop,int
+8,robot,input_partdepth,,real
+9,robot,horiz_spacing,"const, defines input array spacing, mm",real
+10,robot,vert_spacing,"const, defines input array spacing, mm",real
+11,robot,fixtureLen_raw,"const, defines input array depth, mm",real
+12,plc,backstop_set,"backstop position, inches",real
+13,robot,fixtureLen_calc,total input fixture length - backstop position,real
+14,robot,part_protrude,length of part protruding from the input array. ,real
+15,robot,part_gripped,length of part gripped,real
+16,robot,radial_offset,found in CALC_OFFSETS,real
+17,robot,length_offset,,real
+18,robot,approach_adj,"adjust picking depth, mm",real
+19,robot,jig_height,"teaching jig radius, mm",real
+20,robot,critical_dia,diameter at which the radial offset becomes dependent on fixture contact point instead of part radius ,real
+21,robot,part_ungrip,"length of part protruding from gripper, mm",real
+22,robot,furnace1_state,"Furnace 1 state (0=empty, 1=loading, 2=heating, 3=ready)",int
+23,robot,furnace2_state,"Furnace 2 state (0=empty, 1=loading, 2=heating, 3=ready)",int
+24,robot,priority_furnace,"Priority furnace (1 or 2, which is ready first)",int
+25,robot,available_furnace,"Available furnace (1 or 2, which can accept part)",int
+26,,,,
+27,,,,
+28,,,,
+29,,,,
+30,,,,
+31,,,,
+32,,,,
+33,,,,
+34,,,,
+35,,,,
+36,,,,
+37,,,,
+38,,,,
+39,,,,
+40,,,,
+41,,,,
+42,,,,
+43,,,,
+44,,,,
+45,,,,
+46,,,,
+47,,,,
+48,,,,
+49,,,,
+50,robot,j1torque,,
+51,robot,j2torque,,
+52,robot,j3torque,,
+53,robot,j4torque,,
+54,robot,j5torque,,
+55,robot,j6torque,,
+56,,,,
+57,,,,
+58,,,,
+59,,,,
+60,,,,
+61,,,,
+62,,,,
+63,,,,
+64,,,,
+65,,,,
+66,,,,
+67,,,,
+68,,,,
+69,,,,
+70,,,,
+71,,,,
+72,,,,
+73,,,,
+74,,,,
+75,,,,
+76,,,,
+77,,,,
+78,,,,
+79,,,,
+80,pc,j1 trq dt,,
+81,pc,j2 trq dt,,
+82,pc,j3 trq dt,,
+83,pc,j4 trq dt,,
+84,pc,j5 trq dt,,
+85,pc,j6 trq dt,,
+86,,,,
+87,,,,
+88,,,,
+89,,,,
+90,,,,
+91,,,,
+92,,,,
+93,,,,
+94,,,,
+95,,,,
+96,,,,
+97,,,,
+98,,,,
+86,robot,ds_command,die scan command (1=start 2=grid 3=confirm 0=stop),int
+87,robot,ds_status,die scan status (0=ready 1=busy 2=complete 3=error),int
+88,robot,ds_current_x,die scan current X position,real
+89,robot,ds_current_y,die scan current Y position,real
+90,robot,ds_current_z,die scan current Z position,real
+91,robot,ds_point_counter,die scan measurement point counter,int
+92,robot,ds_total_points,die scan total points planned,int
+93,robot,ds_center_x,die scan center X result,real
+94,robot,ds_center_y,die scan center Y result,real
+95,robot,ds_avg_height,die scan average die height,real
+96,robot,ds_confidence,die scan confidence level (0-100),int
+97,robot,ds_grid_size,die scan grid size (9x9 default),int
+98,robot,ds_step_size,die scan step size (25mm default),int
+99,robot,ds_start_offset,die scan start offset (-100mm default),int
+100,robot,ds_confirm_radius,die scan confirm radius (40mm),int
+101,robot,ds_confirm_points,die scan confirm points (8 points),int
+102,robot,ds_row_counter,die scan row counter (FOR loop),int
+103,robot,ds_col_counter,die scan column counter (FOR loop),int
+104,robot,ds_calc_x,die scan calculated X position,real
+105,robot,ds_calc_y,die scan calculated Y position,real
+106,robot,ds_point_counter_confirm,die scan point counter (confirmation),int
+107,robot,ds_angle_calc,die scan angle calculation,real
+108,robot,ds_log_1,die scan log register 1,int
+109,robot,ds_log_2,die scan log register 2,int
+110,robot,ds_log_3,die scan log register 3,int
+111,robot,ds_log_4,die scan log register 4,int
+112,robot,ds_log_5,die scan log register 5,int
+113,robot,ds_log_6,die scan log register 6,int
+114,robot,ds_log_7,die scan log register 7,int
+115,robot,ds_log_8,die scan log register 8,int
+116,robot,ds_log_9,die scan log register 9,int
+117,robot,ds_log_10,die scan log register 10,int
+118,robot,ds_log_11,die scan log register 11,int
+119,robot,ds_zone_points,die scan zone map points counter,int
+120,robot,ds_die_face_count,die scan die face count,int
+121,robot,ds_die_face_sum,die scan die face sum,real
+122,robot,ds_scan_z_offset,die scan Z offset,real
+123,robot,ds_x_scan_counter,die scan X scan counter (FOR loop),int
+124,robot,ds_y_scan_counter,die scan Y scan counter (FOR loop),int
+125,robot,ds_zone_x1,die scan zone mapping X1,real
+126,robot,ds_zone_y1,die scan zone mapping Y1,real
+127,robot,ds_zone_type1,die scan zone mapping type1,int
+128,robot,ds_zone_x2,die scan zone mapping X2,real
+129,robot,ds_zone_y2,die scan zone mapping Y2,real
+130,robot,ds_zone_type2,die scan zone mapping type2,int
+131,robot,ds_zone_x3,die scan zone mapping X3,real
+132,robot,ds_zone_y3,die scan zone mapping Y3,real
+133,robot,ds_zone_type3,die scan zone mapping type3,int
+134,robot,ds_zone_x4,die scan zone mapping X4,real
+135,robot,ds_zone_y4,die scan zone mapping Y4,real
+136,robot,ds_zone_type4,die scan zone mapping type4,int
+137,robot,ds_face_height_sum,die scan face height sum,real
+138,robot,ds_face_height_count,die scan face height count,int
+139,robot,ds_face_height_avg,die scan face height average,real
+140,robot,ds_measure_result,die scan measurement result,real
+141,robot,ds_measure_trigger,die scan measure trigger,int
+142,robot,ds_measure_complete,die scan measure complete,int
+143,robot,ds_laser_reading,die scan laser reading,real
+144,robot,ds_measure_class_x,die scan measurement classification X,real
+145,robot,ds_measure_class_y,die scan measurement classification Y,real
+146,robot,ds_measure_class_z,die scan measurement classification Z,real
+147,robot,ds_measure_class_height,die scan measurement classification height,real
+148,robot,ds_measure_class_valid,die scan measurement classification valid,int
+149,robot,ds_measure_class_zone,die scan measurement classification zone,int
+150,robot,ds_measure_class_edge,die scan measurement classification edge,int
+151,robot,ds_measure_class_face,die scan measurement classification face,int
+152,robot,ds_measure_class_well,die scan measurement classification well,int
+153,robot,ds_measure_class_debris,die scan measurement classification debris,int
+154,robot,ds_zone_analysis_x,die scan zone analysis X,real
+155,robot,ds_zone_analysis_y,die scan zone analysis Y,real
+156,robot,ds_zone_analysis_z,die scan zone analysis Z,real
+157,robot,ds_zone_analysis_height,die scan zone analysis height,real
+158,robot,ds_zone_analysis_zone,die scan zone analysis zone,int
+159,robot,ds_zone_analysis_count,die scan zone analysis count,int
+160,robot,ds_zone_analysis_sum,die scan zone analysis sum,real
+161,robot,ds_well_edge_x1,die scan well edge point X1,real
+162,robot,ds_well_edge_y1,die scan well edge point Y1,real
+163,robot,ds_well_edge_x2,die scan well edge point X2,real
+164,robot,ds_well_edge_y2,die scan well edge point Y2,real
+165,robot,ds_well_edge_x3,die scan well edge point X3,real
+166,robot,ds_well_edge_y3,die scan well edge point Y3,real
+167,robot,ds_well_edge_x4,die scan well edge point X4,real
+168,robot,ds_well_edge_y4,die scan well edge point Y4,real
+169,robot,ds_well_edge_x5,die scan well edge point X5,real
+170,robot,ds_well_edge_y5,die scan well edge point Y5,real
+171,robot,ds_well_edge_x6,die scan well edge point X6,real
+172,robot,ds_well_edge_y6,die scan well edge point Y6,real
+173,robot,ds_well_edge_x7,die scan well edge point X7,real
+174,robot,ds_well_edge_y7,die scan well edge point Y7,real
+175,robot,ds_well_edge_x8,die scan well edge point X8,real
+176,robot,ds_well_edge_y8,die scan well edge point Y8,real
+177,robot,ds_well_edge_x9,die scan well edge point X9,real
+178,robot,ds_well_edge_y9,die scan well edge point Y9,real
+179,robot,ds_well_edge_x10,die scan well edge point X10,real
+180,robot,ds_well_edge_y10,die scan well edge point Y10,real
+181,robot,ds_well_edge_center_x,die scan well edge center X,real
+182,robot,ds_next_pos_x,die scan next position X component,real
+183,robot,ds_next_pos_y,die scan next position Y component,real
+184,robot,ds_next_pos_z,die scan next position Z component,real
+185,robot,ds_pos_request,die scan position request (1=calculate 0=done),int
+186,robot,ds_backup_step_size,die scan backup step size (10mm),int
+187,robot,ds_backup_start_offset,die scan backup start offset (-20mm),int
+188,robot,ds_backup_total_points,die scan backup total points,int
+189,robot,ds_backup_point_count,die scan backup point count,int
+190,,,,
+191,,,,
+192,,,,
+193,,,,
+194,,,,
+195,,,,
+196,,,,
+197,,,,
+198,,,,
+199,,,,
+200,,,,

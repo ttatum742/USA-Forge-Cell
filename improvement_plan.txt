@@ -1,0 +1,86 @@
+# Die Scanning Accuracy Improvement Plan
+
+## Problem Analysis
+Current accuracy: ~5mm error, need ±1mm accuracy. Reducing step size from 1mm to 0.25mm only improved error from 5.7mm to 5.0mm, indicating systematic issues beyond sampling resolution.
+
+## Root Causes Identified
+
+### 1. Edge Detection Limitations
+- **Fixed threshold (2.0mm)** may miss subtle edges or create false positives
+- **Simple height differential** doesn't account for noise or gradual transitions
+- **Limited edge validation** - no verification that detected edges form a coherent circle
+
+### 2. Scanning Pattern Issues
+- **5-pass linear pattern** may miss optimal edge points around a circular die
+- **Y-direction only scanning** limits edge detection to specific orientations
+- **Starting position bias** - scan starts at +5" offset, may miss best edges
+
+### 3. Center Calculation Algorithm
+- **Least squares circle fitting** assumes all edge points are equally valid
+- **No outlier removal** - bad edge points heavily influence final result
+- **Simple averaging methods** don't weight edge quality or confidence
+
+### 4. Mechanical/Sensor Issues
+- **Robot positioning accuracy** may contribute systematic error
+- **Sensor calibration drift** over time
+- **Vibration/settling** during rapid moves between scan points
+
+## Proposed Improvements (Priority Order)
+
+### Phase 1: Enhanced Edge Detection (High Impact)
+1. **Adaptive Edge Thresholds**
+   - Implement dynamic threshold based on local height variance
+   - Add gradient-based edge detection (not just absolute difference)
+   - Multi-point edge confirmation (require 2-3 consecutive points)
+
+2. **Edge Quality Scoring**
+   - Rate edge quality based on sharpness, consistency, and confidence
+   - Filter out low-quality edges before center calculation
+   - Add edge direction analysis for circular consistency
+
+### Phase 2: Improved Scanning Strategy (Medium Impact)
+3. **Circular/Spiral Scanning Pattern**
+   - Replace linear passes with circular scanning around estimated center
+   - Add preliminary center estimation from coarse scan
+   - Focus detailed scanning on areas near estimated edges
+
+4. **Multi-Direction Edge Validation**
+   - Scan both X and Y directions at edge locations
+   - Cross-validate edges found in perpendicular directions
+   - Add radial scanning from center outward
+
+### Phase 3: Advanced Center Calculation (Medium Impact)
+5. **Robust Circle Fitting**
+   - Implement RANSAC algorithm to remove outlier edge points
+   - Use weighted least squares with edge quality scores
+   - Add multiple fitting methods with consensus voting
+
+6. **Iterative Refinement**
+   - Initial coarse center estimate → focused re-scanning → refined center
+   - Adaptive scan density based on edge uncertainty
+   - Secondary validation scan around calculated center
+
+### Phase 4: System Calibration (Lower Impact)
+7. **Enhanced Calibration**
+   - Multi-point sensor calibration with known reference objects
+   - Robot positioning accuracy verification and correction
+   - Systematic error characterization and compensation
+
+8. **Real-time Quality Monitoring**
+   - Track edge detection consistency across scans
+   - Alert for sensor drift or mechanical issues
+   - Automatic recalibration triggers
+
+## Implementation Strategy
+- **Week 1**: Phase 1 - Enhanced edge detection algorithms
+- **Week 2**: Phase 2 - Circular scanning pattern 
+- **Week 3**: Phase 3 - Advanced center calculation
+- **Week 4**: Phase 4 - System calibration improvements
+
+## Expected Results
+- **Phase 1**: 2-3mm accuracy improvement (primary impact)
+- **Phase 2**: 1-2mm additional improvement 
+- **Phase 3**: 0.5-1mm additional improvement
+- **Combined**: Target ±1mm accuracy achieved
+
+This systematic approach addresses the fundamental limitations in edge detection, scanning strategy, and mathematical algorithms rather than just increasing sampling density.

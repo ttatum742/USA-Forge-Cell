@@ -1,0 +1,101 @@
+﻿PR,Desc,Details
+1,input_base,"taught to top left pick point, in UF1. should be taught with teaching jig. "
+2,furnace_1,"front of furnace1 fixture (for now), taught in UF2 with teaching jig. "
+3,furnace_2,"front of furnace2 fixture (for now), taught in UF2 with teaching jig. "
+4,furnace_approach,"Joint representation, used as a CNT movement otw to whichever furnace is active. Should be taught planar with furnace table, on side closest to robot base. "
+5,pushstart,
+6,pushend,
+7,output,
+8,calc_pos,
+9,,
+10,array_approach,joint rep
+11,pick_pos,calc_pos converted to UF1 on the fly 
+12,furnace_pick,active furnace position + place_offset-push distance (UF2 Z)
+13,forge_aprch,"jnt rep, used as cnt otw to forge, part should be kicked out 45deg ready to go into forge. "
+14,forge_place,
+15,forge_pick,
+16,,
+17,,
+18,,
+19,,
+20,zoffset150,self explanatory
+21,approachOffs_t,
+22,approachOffs,
+23,pickoffset_t,
+24,pickoffset,
+25,rmvPart,
+26,placeoffset,
+27,placeapproach,
+28,push_adj,
+29,backoff_pshStrt,
+30,push_dist1,push distance. calculated in pushtobackstop if AR[1]=1 
+31,push_dist2,push distance. calculated in pushtobackstop if AR[1]=2
+32,frg_pick_ofs,for pulling part from forge. z=part length
+33,pointdown,tool_x offset for after picking. max I could get in roboguide was about +20deg about x
+34,,
+35,sensor_jig_pickup,position for picking up sensor jig from fixture
+36,die_scan_start,sensor start position 65mm above known static point
+37,scan_point_calc,calculated scan point position (dynamic)
+38,current_pos_calc,calculated current position using LPOS
+39,sensor_approach,approach position for sensor operations
+40,sensor_retract,retract position after sensor measurements
+41,die_scan_offset,offset position for die scanning operations
+42,continuous_scan_start,starting position for continuous edge scan
+43,edge_scan_ref,reference position for edge detection
+44,scan_complete_pos,position after scan completion
+45,sensor_calibrate_pos,position for sensor calibration
+46,,
+47,,
+48,,
+49,,
+50,,
+51,,
+52,,
+53,,
+54,,
+55,,
+56,,
+57,,
+58,,
+59,,
+60,,
+61,,
+62,,
+63,,
+64,,
+65,,
+66,,
+67,,
+68,,
+69,,
+70,,
+71,,
+72,,
+73,,
+74,,
+75,,
+76,,
+77,,
+78,,
+79,,
+80,,
+81,,
+82,,
+83,,
+84,,
+85,,
+86,,
+87,,
+88,,
+89,,
+90,,
+91,,
+92,,
+93,,
+94,,
+95,,
+96,,
+97,,
+98,home,
+99,zero90,
+100,zeros,
