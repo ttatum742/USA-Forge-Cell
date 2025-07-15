@@ -2,7 +2,7 @@
 1,plc,part_length,input in inches,real
 2,plc,rod_diameter,input in inches ,real
 3,plc,head_type,,int
-4,plc,runqty,amount of parts run,int
+4,plc,runqty,amount of parts to run,int
 5,robot,parts_remaining,changes in increment_count,int
 6,robot,rowcount,indexes rows in main loop,int
 7,robot,colcount,indexes cols in main loop,int
