@@ -1,0 +1,152 @@
+SPIRAL TEST 7/11 3:55pm
+
+✅ SCAN COMPLETE: Center [410.0, 815.9]
+
+============================================================
+           🎯 DIE SCANNING RESULTS - SUCCESS
+============================================================
+📍 DIE CENTER: [410.0, 815.9] mm
+📏 DIAMETER: 109.9 mm
+📐 AVG HEIGHT: 66.2 mm
+🎯 CONFIDENCE: 51.1%
+
+📊 DATA QUALITY:
+   • Valid scan points: 822
+   • Invalid readings: 0
+   • Data quality: 100.0%
+
+🔍 EDGE DETECTION:
+   • Total edges found: 43
+   • Outer edges (used): 19
+   • Interior edges (filtered): 24
+2025-07-11 15:54:50,116 - INFO - === Scanning Coverage Analysis ===
+2025-07-11 15:54:50,117 - INFO - Valid scan points: 822/822
+2025-07-11 15:54:50,118 - INFO - Scan area: 118.6 x 124.1 mm = 14720 mm²
+2025-07-11 15:54:50,119 - INFO - Point density: 0.06 points/mm²
+2025-07-11 15:54:50,120 - INFO - Edge detection: 19 outer edges (46.1% perimeter coverage)
+2025-07-11 15:54:50,120 - INFO - Scanning efficiency: 100.0% (valid readings)
+
+📏 SCAN COVERAGE ANALYSIS:
+   • X-range: 118.6 mm
+   • Y-range: 124.1 mm
+   • Total area scanned: 14720 mm²
+   • Point density: 0.1 points/mm²
+   • Edge coverage: 46.1% of perimeter
+   • Scanning efficiency: 100.0%
+
+🎯 ACCURACY (vs true center [398, 809]):
+   • X error: 12.0 mm
+   • Y error: 6.9 mm
+   • Total error: 13.8 mm
+   ❌ IMPROVEMENT NEEDED: >2mm error
+
+🗺️  DIE SURFACE MAP:
+   Area: X[336-455] Y[747-871] mm
+   Heights: 55.1 to 77.4 mm
+   Symbols: . ~ - = # @ (low→high)  + = center  E = edges
+
+    871 │        -#     E       E###   │
+    865 │        -#     E      #E###   │
+    858 │        -#     ~       ~ ##   │
+    852 │        -E-    ~       ~ #E#  │
+    845 │        ~-             ~ #~   │
+    839 │        --             ~~~~   │
+    832 │        ~~             ~~~~~~ │
+    826 │        ~~             ~~~~~~ │
+    819 │##---~  ~~             ~ ~~   │
+    813 │##--~~  ~~             ~~~~~~ │
+    806 │        ~~       +     ~ ~~   │
+    800 │        ~~             ~~~~~~ │
+    793 │        ~~             ~ ~~~~ │
+    787 │        ~~             ~ ~~~  │
+    780 │       ~~~            ~~~~#   │
+    773 │       EE~     ~~     ~~~~#   │
+    767 │        #~      ~      # E#   │
+    760 │        #~      E      ##EE#  │
+    754 │       #E~      E      ###-   │
+    747 │                              │
+       └──────────────────────────────┘
+         336   361   385   410   435
+
+============================================================
+✅ SCAN COMPLETE - Results written to robot registers
+============================================================
+
+DECREASING STEP SIZE, BETTER RESULTS:
+
+2025-07-11 16:16:17,741 - INFO - Releasing gateway <connector 192.168.0.1:44818[4233421840]> connection, after polling    0.026s
+2025-07-11 16:16:17,742 - INFO - Die scanning completed successfully
+✅ SCAN COMPLETE: Center [405.4, 811.2]
+
+============================================================
+           🎯 DIE SCANNING RESULTS - SUCCESS
+============================================================
+📍 DIE CENTER: [405.4, 811.2] mm
+📏 DIAMETER: 110.4 mm
+📐 AVG HEIGHT: 66.7 mm
+🎯 CONFIDENCE: 79.3%
+
+📊 DATA QUALITY:
+   • Valid scan points: 1493
+   • Invalid readings: 0
+   • Data quality: 100.0%
+
+🔍 EDGE DETECTION:
+   • Total edges found: 81
+   • Outer edges (used): 11
+   • Interior edges (filtered): 70
+2025-07-11 16:16:17,746 - INFO - === Scanning Coverage Analysis ===
+2025-07-11 16:16:17,747 - INFO - Valid scan points: 1493/1493
+2025-07-11 16:16:17,747 - INFO - Scan area: 119.5 x 125.3 mm = 14979 mm²
+2025-07-11 16:16:17,747 - INFO - Point density: 0.10 points/mm²
+2025-07-11 16:16:17,748 - INFO - Edge detection: 11 outer edges (25.8% perimeter coverage)
+2025-07-11 16:16:17,748 - INFO - Scanning efficiency: 100.0% (valid readings)
+
+📏 SCAN COVERAGE ANALYSIS:
+   • X-range: 119.5 mm
+   • Y-range: 125.3 mm
+   • Total area scanned: 14979 mm²
+   • Point density: 0.1 points/mm²
+   • Edge coverage: 25.8% of perimeter
+   • Scanning efficiency: 100.0%
+
+🎯 ACCURACY (vs true center [398, 809]):
+   • X error: 7.4 mm
+   • Y error: 2.2 mm
+   • Total error: 7.8 mm
+   ❌ IMPROVEMENT NEEDED: >2mm error
+
+🗺️  DIE SURFACE MAP:
+   Area: X[336-456] Y[748-873] mm
+   Heights: 55.1 to 77.5 mm
+   Symbols: . ~ - = # @ (low→high)  + = center  E = edges
+
+    873 │       ###      #      ## #   │
+    866 │       ##~~    E#     #E# #   │
+    860 │        -~-    ~      ### #   │
+    853 │        --     ~       ~~#E#  │
+    846 │        -~             ~~~E#  │
+    840 │        -~             ~~~~   │
+    833 │        ~~             ~~ ~~# │
+    827 │        ~~             ~~~~~~ │
+    820 │##-~~~  ~~             ~~ ~#~ │
+    814 │##--~-  ~~      +      ~~~~~~ │
+    807 │        ~~             ~~ ~.# │
+    800 │        ~~             ~~~~~~ │
+    794 │        ~~             ~~~~~~ │
+    787 │        ~~             ~~~~~  │
+    781 │        ~~      ~     ~~~~~   │
+    774 │       EE~      ~     ~~~##   │
+    767 │       ~E~      ~     ~~~##   │
+    761 │        ###      E     #####  │
+    754 │        ###      E     #####  │
+    748 │                              │
+       └──────────────────────────────┘
+         336   361   386   411   435
+
+============================================================
+✅ SCAN COMPLETE - Results written to robot registers
+============================================================
+
+2025-07-11 16:16:17,758 - INFO - Results written to robot registers and displayed
+
