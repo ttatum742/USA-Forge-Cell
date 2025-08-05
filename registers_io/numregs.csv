@@ -20,8 +20,8 @@
 19,robot,jig_height,"teaching jig radius, mm",real
 20,robot,critical_dia,diameter at which the radial offset becomes dependent on fixture contact point instead of part radius ,real
 21,robot,part_ungrip,"length of part protruding from gripper, mm",real
-22,robot,furnace1_state,"Furnace 1 state (0=empty, 1=loading, 2=heating, 3=ready)",int
-23,robot,furnace2_state,"Furnace 2 state (0=empty, 1=loading, 2=heating, 3=ready)",int
+22,robot,furnace1_state,"Furnace 1 state - dual:(0=empty, 1=loading, 2=heating, 3=ready) preheat:(preheat furnace)",int
+23,robot,furnace2_state,"Furnace 2 state - dual:(0=empty, 1=loading, 2=heating, 3=ready) preheat:(final temp furnace)",int
 24,robot,priority_furnace,"Priority furnace (1 or 2, which is ready first)",int
 25,robot,available_furnace,"Available furnace (1 or 2, which can accept part)",int
 26,,,,

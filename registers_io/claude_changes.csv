@@ -51,3 +51,6 @@ continuous scan start position,N/A,PR42
 edge scan ref position,N/A,PR43
 scan complete position,N/A,PR44
 sensor calibrate position,N/A,PR45
+preheat system implementation,Created main_preheat.ls,2025-08-05
+preheat system transfer program,Created TRANSFER_TO_FINAL_FURNACE.LS,2025-08-05
+furnace register documentation,Updated R22/R23 descriptions,Added preheat/dual mode clarification
