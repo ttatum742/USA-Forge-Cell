@@ -1,0 +1,4 @@
+for main dual furnace:
+- need to restructure conditional branching. Right now our for loops can only handle a single furnace setup. 
+for main preheat:
+- same issue as dual furnace setup. can't go pick a second part mid for loop since our calc_pos depends on the loop counters. 
