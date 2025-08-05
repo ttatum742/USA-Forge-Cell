@@ -1,6 +1,6 @@
 /PROG LOAD_FURNACE
 /ATTR
-/MN
+
 : !Load part into available furnace;
 : IF (R[25:AVAILABLE_FURNACE]=1) THEN  ;
 :   !Load furnace 1;
@@ -17,6 +17,7 @@
 :     R[23:FURNACE2_STATE]=2 ;
 :     DO[3:FURN2_START]=ON ;
 :     DO[1:PART_READY]=ON ;
+:   ELSE ;
 :   ENDIF ;
 : ENDIF ;
 : END ;
