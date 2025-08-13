@@ -14,8 +14,8 @@
 13,forge_aprch,"jnt rep, used as cnt otw to forge, part should be kicked out 45deg ready to go into forge. "
 14,forge_place,
 15,forge_pick,
-16,,
-17,,
+16,furn1_pick,EE perpendicular to fixture
+17,furn2_pick,EE perpendicular to fixture
 18,,
 19,,
 20,zoffset150,self explanatory
