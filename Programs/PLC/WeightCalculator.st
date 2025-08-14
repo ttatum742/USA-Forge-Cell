@@ -20,10 +20,10 @@ VAR
     ErrorFlag       : BOOL := FALSE;    // Error flag for invalid inputs
     
     // Internal Variables
-    Radius          : REAL := 0.0;      // Part radius (diameter/2)
+    Radius          : REAL := 0.0;      // Part radius
     Volume          : REAL := 0.0;      // Part volume in cubic inches
     SteelDensity    : REAL := 0.284;    // 4140 steel density in lb/in³
-    PI              : REAL := 3.14159265359;
+    PI              : REAL := 3.14159;  // Pi 
     
     // Constants for validation
     MIN_DIAMETER    : REAL := 0.5;    // Minimum diameter (in)

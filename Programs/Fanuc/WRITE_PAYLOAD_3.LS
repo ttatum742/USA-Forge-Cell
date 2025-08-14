@@ -1,4 +1,4 @@
-/PROG  WRITE_PAYLOAD_2
+/PROG  WRITE_PAYLOAD_3
 /ATTR
 OWNER		= MNEDITOR;
 COMMENT		= "stores weight data in sysvar";
@@ -25,23 +25,23 @@ AUTO_SINGULARITY_HEADER;
   ENABLE_SINGULARITY_AVOIDANCE   : FALSE;
 
 : !Program Description: Rewrites ;
-: !payload id 2, doesnt set it. ;
-: !set it by PAYLOAD[x] in your program ;
-: !takes the following arguments:; 
+: !payload id 3, doesnt set it. ;
+: !set it by PAYLOAD[x] in your program
+: !Takes the following arguments: ;
 : ! AR[1] = Weight of payload (kg) ;
 : ! AR[2-4] = CoG (cm). ;
 : ! AR[5-7] = Inertias (kgfcm^2). ;
 : ;
 : !Payload in kg. ;
-: $PLST_GRP1[2].$PAYLOAD=(AR[1]) ;
+: $PLST_GRP1[3].$PAYLOAD=(AR[1]) ;
 : !Payload CoG in cm. ;
-: $PLST_GRP1[2].$PAYLOAD_X=(AR[2]) ;
-: $PLST_GRP1[2].$PAYLOAD_Y=(AR[3]) ;
-: $PLST_GRP1[2].$PAYLOAD_Z=(AR[4]) ;
+: $PLST_GRP1[3].$PAYLOAD_X=(AR[2]) ;
+: $PLST_GRP1[3].$PAYLOAD_Y=(AR[3]) ;
+: $PLST_GRP1[3].$PAYLOAD_Z=(AR[4]) ;
 : !Payload inertia in kgfcm^2. ;
-: $PLST_GRP1[2].$PAYLOAD_IX=(AR[5]*980) ;
-: $PLST_GRP1[2].$PAYLOAD_IY=(AR[6]*980) ;
-: $PLST_GRP1[2].$PAYLOAD_IZ=(AR[7]*980) ;
-:; 
+: $PLST_GRP1[3].$PAYLOAD_IX=(AR[5]*980) ;
+: $PLST_GRP1[3].$PAYLOAD_IY=(AR[6]*980) ;
+: $PLST_GRP1[3].$PAYLOAD_IZ=(AR[7]*980) ;
+:  ; 
 /POS
 /END
