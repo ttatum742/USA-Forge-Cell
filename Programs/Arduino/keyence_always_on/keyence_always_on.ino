@@ -24,7 +24,7 @@ const int SENSOR_ZERO_PIN = 2;      // Digital output to control sensor zeroing 
 const float VOLTAGE_REF = 5.0;      // Arduino reference voltage
 const int ADC_RESOLUTION = 1024;    // 10-bit ADC resolution
 
-// Sensor calibration parameters (adjust based on your Keyence sensor)
+// Sensor calibration parameters (ref sensor documentation)
 const float SENSOR_MIN_DISTANCE = 55.0;  // mm - minimum measurement range
 const float SENSOR_MAX_DISTANCE = 105.0; // mm - maximum measurement range
 const float VOLTAGE_MIN = 0.0;            // V - voltage at max distance
