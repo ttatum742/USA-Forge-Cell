@@ -24,7 +24,7 @@
 23,robot,furnace2_state,"Furnace 2 state - dual:(0=empty, 1=loading, 2=heating, 3=ready) preheat:(final temp furnace)",int
 24,robot,priority_furnace,"Priority furnace (1 or 2, which is ready first)",int
 25,robot,available_furnace,"Available furnace (1 or 2, which can accept part)",int
-26,,,,
+26,robot,diedepth,relative to part len,real
 27,,,,
 28,,,,
 29,,,,

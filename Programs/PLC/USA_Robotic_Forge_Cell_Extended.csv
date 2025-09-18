@@ -1,0 +1,794 @@
+## System ID,Tag Name,Retentive Mode,Initial Value,MODBUS Start Address,MODBUS End Address,Number of Characters,Number of Rows,Number of Columns,Wiring Label,Comment,Forceable,Init Forced,Init Force Value,Remote Access,I/O Address,Data Type,Structure Type,BOW Details
+## 3.0
+C-000002,"1 Hour bit",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+SBR-001008,"1 Minute Bit",false,"0",,,,,,,"On for 30 seconds and Off for 30 seconds",,,,false,,"SBR",,false
+C-000003,"1 Second bit",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+US8-000001,"1 Second tmr",false,"0",,,,,,,,false,false,"0",false,,"US8",,false
+C-000042,"120v_OK",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000057,"120v_Outlet_Allowed",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+SBR-001009,"2 Second Bit",false,"0",,,,,,,"On for 1 second and Off for 1 second",,,,false,,"SBR",,false
+AIS32-0.1.4.1,"AIS32-0.1.4.1",false,"0",,,,,,,,false,false,"0",false,"AIS32-0.1.4.1","AIS32",,false
+AIS32-0.1.4.2,"AIS32-0.1.4.2",false,"0",,,,,,,,false,false,"0",false,"AIS32-0.1.4.2","AIS32",,false
+AIS32-0.1.4.3,"AIS32-0.1.4.3",false,"0",,,,,,,,false,false,"0",false,"AIS32-0.1.4.3","AIS32",,false
+AIS32-0.1.4.4,"AIS32-0.1.4.4",false,"0",,,,,,,,false,false,"0",false,"AIS32-0.1.4.4","AIS32",,false
+AOS32-0.1.4.1,"AOS32-0.1.4.1",false,"0",,,,,,,,false,false,"0",false,"AOS32-0.1.4.1","AOS32",,false
+AOS32-0.1.4.2,"AOS32-0.1.4.2",false,"0",,,,,,,,false,false,"0",false,"AOS32-0.1.4.2","AOS32",,false
+C-000177,"Air_Gun_Atomizer",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000198,"Air_Gun_Atomizer_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000212,"Air_Gun_Close",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000178,"Air_Gun_Fan",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000199,"Air_Gun_Fan_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000179,"Air_Gun_Open",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000197,"Air_Gun_Open_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+SBR-001002,"Always Off Bit",false,"0",,,,,,,"Always off",,,,false,,"SBR",,false
+C-000049,"Always_On_Bit",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+F32-000012,"Approach_adj",false,"0.0",,,,,,,,false,false,"0.0",false,,"F32",,false
+SBR-001017,"Array out of range error",false,"0",,,,,,,"Active if an array index is outside the range of the array",,,,false,,"SBR",,false
+SWR-001514,"Array range error rung location",false,"0",,,,,,,"Rung Number in which ""Array out of range error"" occurred",,,,false,,"SWR",,false
+SWR-001513,"Array range error task location",false,"0",,,,,,,"Task Number in which ""Array out of range error"" occurred",,,,false,,"SWR",,false
+SWR-001506,"Avg Logic Scan Time [x100=usec]",false,"0",,,,,,,"Average logic scan time",,,,false,,"SWR",,false
+SWR-001503,"Avg Scan Interval [x100=usec]",false,"0",,,,,,,"Average overall scan time",,,,false,,"SWR",,false
+F32-000001,"Backstop_Set",false,"0.0",,,,,,,,false,false,"0.0",false,,"F32",,false
+SBR-001006,"Battery Disabled",false,"0",,,,,,,"Active if the ""CPU Battery Alarm"" is disabled in H/W Configuration",,,,false,,"SBR",,false
+SBR-001005,"Battery Low Bit",false,"0",,,,,,,"Active if the battery is weak (""CPU Battery Alarm"" in H/W Configuration)",,,,false,,"SBR",,false
+SWR-001518,"Battery Voltage",false,"0",,,,,,,"Battery voltage in 10ths of a volt",,,,false,,"SWR",,false
+C-000180,"Blow_Double",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000196,"Blow_Double_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000181,"Bottom_Slide_In",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000192,"Bottom_Slide_In_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+SSTR-000041,"CPU Event Log String 01",false,,,,50,,,,"Most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000042,"CPU Event Log String 02",false,,,,50,,,,"2nd most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000043,"CPU Event Log String 03",false,,,,50,,,,"3rd most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000044,"CPU Event Log String 04",false,,,,50,,,,"4th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000045,"CPU Event Log String 05",false,,,,50,,,,"5th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000046,"CPU Event Log String 06",false,,,,50,,,,"6th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000047,"CPU Event Log String 07",false,,,,50,,,,"7th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000048,"CPU Event Log String 08",false,,,,50,,,,"8th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000049,"CPU Event Log String 09",false,,,,50,,,,"9th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000050,"CPU Event Log String 10",false,,,,50,,,,"10th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000051,"CPU Event Log String 11",false,,,,50,,,,"11th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000052,"CPU Event Log String 12",false,,,,50,,,,"12th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000053,"CPU Event Log String 13",false,,,,50,,,,"13th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000054,"CPU Event Log String 14",false,,,,50,,,,"14th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000055,"CPU Event Log String 15",false,,,,50,,,,"15th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000056,"CPU Event Log String 16",false,,,,50,,,,"16th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000057,"CPU Event Log String 17",false,,,,50,,,,"17th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000058,"CPU Event Log String 18",false,,,,50,,,,"18th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000059,"CPU Event Log String 19",false,,,,50,,,,"19th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000060,"CPU Event Log String 20",false,,,,50,,,,"20th most recent CPU event log message",,,,false,,"SSTR",,false
+SSTR-000101,"CPU Model Name",false,,,,50,,,,"CPU Model (ex: ""P3-550"")",,,,false,,"SSTR",,false
+SSTR-000102,"CPU Program File Name",false,,,,50,,,,"CPU program file name",,,,false,,"SSTR",,false
+SBR-001001,"CPU in Run",false,"0",,,,,,,"Active during Run or Debug mode",,,,false,,"SBR",,false
+SWR-001523,"Clock Day",false,"0",,,,,,,"Current Real Time Clock Calendar Day",,,,false,,"SWR",,false
+SWRW-001754,"Clock Day Set",false,"0",,,,,,,"New Real Time Clock Day (set all 3 date values then set ""Initiate_New_Date"" on)",,,,false,,"SWRW",,false
+SWR-001522,"Clock Day of Week",false,"0",,,,,,,"Current Real Time Clock Day of the week (1=Mon ...7=Sun)",,,,false,,"SWR",,false
+SWR-001521,"Clock Hours",false,"0",,,,,,,"Current Real Time Clock Hours",,,,false,,"SWR",,false
+SWRW-001753,"Clock Hours Set",false,"0",,,,,,,"New Real Time Clock Hours (set all 3 time values then set ""Initiate_New_Time"" on)",,,,false,,"SWRW",,false
+SWR-001520,"Clock Minutes",false,"0",,,,,,,"Current Real Time Clock Minutes",,,,false,,"SWR",,false
+SWRW-001752,"Clock Minutes Set",false,"0",,,,,,,"New Real Time Clock Minutes (set all 3 time values then set ""Initiate_New_Time"" on)",,,,false,,"SWRW",,false
+SWR-001524,"Clock Month",false,"0",,,,,,,"Current Real Time Clock Calendar Month",,,,false,,"SWR",,false
+SWRW-001755,"Clock Month Set",false,"0",,,,,,,"New Real Time Clock Month (set all 3 date values then set ""Initiate_New_Date"" on)",,,,false,,"SWRW",,false
+SWR-001519,"Clock Seconds",false,"0",,,,,,,"Current Real Time Clock Seconds",,,,false,,"SWR",,false
+SWRW-001751,"Clock Seconds Set",false,"0",,,,,,,"New Real Time Clock Seconds (set all 3 time values then set ""Initiate_New_Time"" on)",,,,false,,"SWRW",,false
+SWR-001525,"Clock Year",false,"0",,,,,,,"Current Real Time Clock Calendar Year",,,,false,,"SWR",,false
+SWRW-001756,"Clock Year Set",false,"0",,,,,,,"New Real Time Clock Year (set all 3 date values then set ""Initiate_New_Date"" on)",,,,false,,"SWRW",,false
+S16-000032,"Column_Count",false,"0",,,,,,,,false,false,"0",false,,"S16",,false
+SBR-001012,"Critical Error Bit",false,"0",,,,,,,"Active when a critical error is present",,,,false,,"SBR",,false
+SWR-000001,"Critical Error Log 01",false,"0",,,,,,,"Most recent critical error",,,,false,,"SWR",,false
+SWR-000002,"Critical Error Log 02",false,"0",,,,,,,"2nd most recent critical error",,,,false,,"SWR",,false
+SWR-000003,"Critical Error Log 03",false,"0",,,,,,,"3rd most recent critical error",,,,false,,"SWR",,false
+SWR-000004,"Critical Error Log 04",false,"0",,,,,,,"4th most recent critical error",,,,false,,"SWR",,false
+SWR-000005,"Critical Error Log 05",false,"0",,,,,,,"5th most recent critical error",,,,false,,"SWR",,false
+SWR-000006,"Critical Error Log 06",false,"0",,,,,,,"6th most recent critical error",,,,false,,"SWR",,false
+SWR-000007,"Critical Error Log 07",false,"0",,,,,,,"7th most recent critical error",,,,false,,"SWR",,false
+SWR-000008,"Critical Error Log 08",false,"0",,,,,,,"8th most recent critical error",,,,false,,"SWR",,false
+SWR-000009,"Critical Error Log 09",false,"0",,,,,,,"9th most recent critical error",,,,false,,"SWR",,false
+SWR-000010,"Critical Error Log 10",false,"0",,,,,,,"10th most recent critical error",,,,false,,"SWR",,false
+SWR-000011,"Critical Error Log 11",false,"0",,,,,,,"11th most recent critical error",,,,false,,"SWR",,false
+SWR-000012,"Critical Error Log 12",false,"0",,,,,,,"12th most recent critical error",,,,false,,"SWR",,false
+SWR-000013,"Critical Error Log 13",false,"0",,,,,,,"13th most recent critical error",,,,false,,"SWR",,false
+SWR-000014,"Critical Error Log 14",false,"0",,,,,,,"14th most recent critical error",,,,false,,"SWR",,false
+SWR-000015,"Critical Error Log 15",false,"0",,,,,,,"15th most recent critical error",,,,false,,"SWR",,false
+SWR-000016,"Critical Error Log 16",false,"0",,,,,,,"16th most recent critical error",,,,false,,"SWR",,false
+SWR-000017,"Critical Error Log 17",false,"0",,,,,,,"17th most recent critical error",,,,false,,"SWR",,false
+SWR-000018,"Critical Error Log 18",false,"0",,,,,,,"18th most recent critical error",,,,false,,"SWR",,false
+SWR-000019,"Critical Error Log 19",false,"0",,,,,,,"19th most recent critical error",,,,false,,"SWR",,false
+SWR-000020,"Critical Error Log 20",false,"0",,,,,,,"20th most recent critical error",,,,false,,"SWR",,false
+SSTR-000001,"Critical Error Log String 01",false,,,,50,,,,"Most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000002,"Critical Error Log String 02",false,,,,50,,,,"2nd most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000003,"Critical Error Log String 03",false,,,,50,,,,"3rd most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000004,"Critical Error Log String 04",false,,,,50,,,,"4th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000005,"Critical Error Log String 05",false,,,,50,,,,"5th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000006,"Critical Error Log String 06",false,,,,50,,,,"6th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000007,"Critical Error Log String 07",false,,,,50,,,,"7th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000008,"Critical Error Log String 08",false,,,,50,,,,"8th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000009,"Critical Error Log String 09",false,,,,50,,,,"9th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000010,"Critical Error Log String 10",false,,,,50,,,,"10th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000011,"Critical Error Log String 11",false,,,,50,,,,"11th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000012,"Critical Error Log String 12",false,,,,50,,,,"12th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000013,"Critical Error Log String 13",false,,,,50,,,,"13th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000014,"Critical Error Log String 14",false,,,,50,,,,"14th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000015,"Critical Error Log String 15",false,,,,50,,,,"15th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000016,"Critical Error Log String 16",false,,,,50,,,,"16th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000017,"Critical Error Log String 17",false,,,,50,,,,"17th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000018,"Critical Error Log String 18",false,,,,50,,,,"18th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000019,"Critical Error Log String 19",false,,,,50,,,,"19th most recent critical error message",,,,false,,"SSTR",,false
+SSTR-000020,"Critical Error Log String 20",false,,,,50,,,,"20th most recent critical error message",,,,false,,"SSTR",,false
+SWR-001510,"Current Critical Error",false,"0",,,,,,,"Current Critical Error number (0 if no active errors present)",,,,false,,"SWR",,false
+SWR-001516,"Current I/O Config Error Base",false,"0",,,,,,,"I/O base in which ""I/O Configuration Error"" occurred",,,,false,,"SWR",,false
+SWR-001515,"Current I/O Config Error Group",false,"0",,,,,,,"I/O group in which ""I/O Configuration Error"" occurred",,,,false,,"SWR",,false
+SWR-001517,"Current I/O Config Error Slot",false,"0",,,,,,,"I/O slot in which ""I/O Configuration Error"" occurred",,,,false,,"SWR",,false
+SWR-001511,"Current Non-critical Error",false,"0",,,,,,,"Current Non-Critical Error number (0 if no active errors present)",,,,false,,"SWR",,false
+C-000147,"Cycle_Complete",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000039,"Cycle_Start",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+DI-0.1.3.1,"DI-0.1.3.1",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.1","DI",,false
+DI-0.1.3.10,"DI-0.1.3.10",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.10","DI",,false
+DI-0.1.3.11,"DI-0.1.3.11",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.11","DI",,false
+DI-0.1.3.12,"DI-0.1.3.12",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.12","DI",,false
+DI-0.1.3.13,"DI-0.1.3.13",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.13","DI",,false
+DI-0.1.3.14,"DI-0.1.3.14",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.14","DI",,false
+DI-0.1.3.15,"DI-0.1.3.15",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.15","DI",,false
+DI-0.1.3.16,"DI-0.1.3.16",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.16","DI",,false
+DI-0.1.3.2,"DI-0.1.3.2",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.2","DI",,false
+DI-0.1.3.3,"DI-0.1.3.3",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.3","DI",,false
+DI-0.1.3.4,"DI-0.1.3.4",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.4","DI",,false
+DI-0.1.3.5,"DI-0.1.3.5",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.5","DI",,false
+DI-0.1.3.6,"DI-0.1.3.6",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.6","DI",,false
+DI-0.1.3.7,"DI-0.1.3.7",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.7","DI",,false
+DI-0.1.3.8,"DI-0.1.3.8",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.8","DI",,false
+DI-0.1.3.9,"DI-0.1.3.9",false,"0",,,,,,,,false,false,"0",false,"DI-0.1.3.9","DI",,false
+DO-0.1.1.1,"DO-0.1.1.1",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.1","DO",,false
+DO-0.1.1.10,"DO-0.1.1.10",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.10","DO",,false
+DO-0.1.1.11,"DO-0.1.1.11",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.11","DO",,false
+DO-0.1.1.12,"DO-0.1.1.12",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.12","DO",,false
+DO-0.1.1.13,"DO-0.1.1.13",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.13","DO",,false
+DO-0.1.1.14,"DO-0.1.1.14",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.14","DO",,false
+DO-0.1.1.15,"DO-0.1.1.15",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.15","DO",,false
+DO-0.1.1.2,"DO-0.1.1.2",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.2","DO",,false
+DO-0.1.1.3,"DO-0.1.1.3",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.3","DO",,false
+DO-0.1.1.4,"DO-0.1.1.4",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.4","DO",,false
+DO-0.1.1.5,"DO-0.1.1.5",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.5","DO",,false
+DO-0.1.1.6,"DO-0.1.1.6",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.6","DO",,false
+DO-0.1.1.7,"DO-0.1.1.7",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.7","DO",,false
+DO-0.1.1.8,"DO-0.1.1.8",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.8","DO",,false
+DO-0.1.1.9,"DO-0.1.1.9",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.1.9","DO",,false
+DO-0.1.2.1,"DO-0.1.2.1",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.1","DO",,false
+DO-0.1.2.10,"DO-0.1.2.10",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.10","DO",,false
+DO-0.1.2.11,"DO-0.1.2.11",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.11","DO",,false
+DO-0.1.2.12,"DO-0.1.2.12",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.12","DO",,false
+DO-0.1.2.13,"DO-0.1.2.13",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.13","DO",,false
+DO-0.1.2.14,"DO-0.1.2.14",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.14","DO",,false
+DO-0.1.2.15,"DO-0.1.2.15",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.15","DO",,false
+DO-0.1.2.2,"DO-0.1.2.2",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.2","DO",,false
+DO-0.1.2.3,"DO-0.1.2.3",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.3","DO",,false
+DO-0.1.2.4,"DO-0.1.2.4",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.4","DO",,false
+DO-0.1.2.5,"DO-0.1.2.5",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.5","DO",,false
+DO-0.1.2.6,"DO-0.1.2.6",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.6","DO",,false
+DO-0.1.2.7,"DO-0.1.2.7",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.7","DO",,false
+DO-0.1.2.8,"DO-0.1.2.8",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.8","DO",,false
+DO-0.1.2.9,"DO-0.1.2.9",false,"0",,,,,,,,false,false,"0",false,"DO-0.1.2.9","DO",,false
+C-000010,"Dummy",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000207,"ESTOP",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000006,"Emergency_Stop",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000009,"Emergency_Stop_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000007,"Emergency_Stop_Switch",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000011,"Enclosure_Fans",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000149,"Enclosure_Fans_Disabled",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000012,"Enclosure_Lights",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+SWR-001526,"Ethernet Speed [External]",false,"0",,,,,,,"""Ethernet"" port speed (Ethernet 10 or 100)",,,,false,,"SWR",,false
+SWR-001527,"Ethernet Speed [Internal]",false,"0",,,,,,,"""Remote I/O"" port speed (Ethernet 10 or 100)",,,,false,,"SWR",,false
+SBR-001004,"Every Other Scan Bit",false,"0",,,,,,,"Toggles at the start of each scan",,,,false,,"SBR",,false
+SSTRUC-000002,"Fanuc",false,,,,,,,,"System Structure for Generic EtherNet/IP Device",,,,false,,"SSTRUC","EIPD",false
+STR-000011,"Fanuc.AdapterName",false,,,,16,,,,,,,,false,,"STR","EIPD",false
+C-000153,"Fanuc.Msg1ConnOnline",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+C-000152,"Fanuc.Msg1Enable",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+S32-000012,"Fanuc.Msg1GenStatus",false,"0",,,,,,,,false,false,"0",false,,"S32","EIPD",false
+C-000154,"Fanuc.Msg1RunIdleStatus",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+STR-000013,"Fanuc.Msg1StatusDesc",false,,,,40,,,,,,,,false,,"STR","EIPD",false
+C-000156,"Fanuc.Msg2ConnOnline",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+C-000155,"Fanuc.Msg2Enable",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+S32-000013,"Fanuc.Msg2GenStatus",false,"0",,,,,,,,false,false,"0",false,,"S32","EIPD",false
+C-000157,"Fanuc.Msg2RunIdleStatus",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+STR-000014,"Fanuc.Msg2StatusDesc",false,,,,32,,,,,,,,false,,"STR","EIPD",false
+C-000159,"Fanuc.Msg3ConnOnline",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+C-000158,"Fanuc.Msg3Enable",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+S32-000014,"Fanuc.Msg3GenStatus",false,"0",,,,,,,,false,false,"0",false,,"S32","EIPD",false
+C-000160,"Fanuc.Msg3RunIdleStatus",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+STR-000015,"Fanuc.Msg3StatusDesc",false,,,,32,,,,,,,,false,,"STR","EIPD",false
+C-000162,"Fanuc.Msg4ConnOnline",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+C-000161,"Fanuc.Msg4Enable",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+S32-000015,"Fanuc.Msg4GenStatus",false,"0",,,,,,,,false,false,"0",false,,"S32","EIPD",false
+C-000163,"Fanuc.Msg4RunIdleStatus",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+STR-000016,"Fanuc.Msg4StatusDesc",false,,,,32,,,,,,,,false,,"STR","EIPD",false
+C-000165,"Fanuc.Msg5ConnOnline",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+C-000164,"Fanuc.Msg5Enable",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+S32-000016,"Fanuc.Msg5GenStatus",false,"0",,,,,,,,false,false,"0",false,,"S32","EIPD",false
+C-000166,"Fanuc.Msg5RunIdleStatus",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+STR-000017,"Fanuc.Msg5StatusDesc",false,,,,32,,,,,,,,false,,"STR","EIPD",false
+C-000168,"Fanuc.Msg6ConnOnline",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+C-000167,"Fanuc.Msg6Enable",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+S32-000017,"Fanuc.Msg6GenStatus",false,"0",,,,,,,,false,false,"0",false,,"S32","EIPD",false
+C-000169,"Fanuc.Msg6RunIdleStatus",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+STR-000018,"Fanuc.Msg6StatusDesc",false,,,,32,,,,,,,,false,,"STR","EIPD",false
+C-000171,"Fanuc.Msg7ConnOnline",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+C-000170,"Fanuc.Msg7Enable",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+S32-000018,"Fanuc.Msg7GenStatus",false,"0",,,,,,,,false,false,"0",false,,"S32","EIPD",false
+C-000172,"Fanuc.Msg7RunIdleStatus",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+STR-000019,"Fanuc.Msg7StatusDesc",false,,,,32,,,,,,,,false,,"STR","EIPD",false
+C-000174,"Fanuc.Msg8ConnOnline",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+C-000173,"Fanuc.Msg8Enable",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+S32-000019,"Fanuc.Msg8GenStatus",false,"0",,,,,,,,false,false,"0",false,,"S32","EIPD",false
+C-000175,"Fanuc.Msg8RunIdleStatus",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+STR-000020,"Fanuc.Msg8StatusDesc",false,,,,32,,,,,,,,false,,"STR","EIPD",false
+C-000151,"Fanuc.TCPConnected",false,"0",,,,,,,,false,false,"0",false,,"C","EIPD",false
+STR-000012,"Fanuc.TcpIpError",false,,,,32,,,,,,,,false,,"STR","EIPD",false
+S32-000011,"Fanuc.VendorID",false,"0",,,,,,,,false,false,"0",false,,"S32","EIPD",false
+SWR-001509,"Firmware Version",false,"0",,,,,,,"CPU Firmware Version Number in Hex (ex: 0x0102 is version 01.02 or 1.2)",,,,false,,"SWR",,false
+SSTR-000104,"Firmware Version[CPU]",false,,,,50,,,,"CPU firmware version viewed as 001.000.009.023",,,,false,,"SSTR",,false
+SWR-001528,"Firmware Version[major]",false,"0",,,,,,,"CPU firmware Major version number in hex. (ex:  0x0100 =  major version 1.0)",,,,false,,"SWR",,false
+SWR-001529,"Firmware Version[minor]",false,"0",,,,,,,"CPU firmware Minor version number in hex. (ex: 0x0917 = minor version 9.23)",,,,false,,"SWR",,false
+SBR-001003,"First Scan Bit",false,"0",,,,,,,"Active during first scan in Run or Debug mode",,,,false,,"SBR",,false
+SWR-001530,"First Scan Interval [x100=usec]",false,"0",,,,,,,"Holds the value of the First Scan time",,,,false,,"SWR",,false
+F32-000002,"Fixture_Len_raw",false,"0.0",,,,,,,,false,false,"0.0",false,,"F32",,false
+C-000204,"Foot_Petal",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+SBR-001007,"Forces Enabled",false,"0",,,,,,,"Active if any forces are enabled",,,,false,,"SBR",,false
+C-000028,"Forge_Auto_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000022,"Forge_Auto_Mode",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000208,"Forge_ESTOP",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000209,"Forge_In_Manual",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000020,"Forge_Manual_Mode",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000187,"Forge_OK",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000029,"Forge_Running",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000182,"Forward_Inch_Run",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000195,"Forward_Inch_Run_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000188,"Furnace_1_OK",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000189,"Furnace_2_OK",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+F32-000013,"Furnace_Setpoint",true,"100.0",,,,,,,,false,false,"0.0",false,,"F32",,false
+C-000210,"GC_Tripped",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000080,"Grinder_Alignment_Extend_OUT",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000058,"Grinder_Alignment_Extended",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000108,"Grinder_Alignment_Fault_Reset",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000067,"Grinder_Alignment_Retracted",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000068,"Grinder_Escapement_Closed",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000109,"Grinder_Escapement_Fault_Reset",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000104,"Grinder_Escapement_Faulted",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000146,"Grinder_Machine_Start",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000082,"HS_AS1_Extended",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000105,"HS_AS1_Faulted",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000083,"HS_AS1_Retracted",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000084,"HS_AS2_Extended",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000085,"HS_AS2_Retracted",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000086,"HS_Escapement_Closed",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000111,"HS_Escapement_Fault_Reset",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000087,"HS_Escapement_Opened",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000102,"HS_OK_to_start",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000076,"HS_Power_On",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+S16-000001,"Half_Second_acc",false,"0",,,,,,,,false,false,"0",false,,"S16",,false
+C-000023,"Half_Second_dn",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+S16-000033,"Head_Type",false,"0",,,,,,,,false,false,"0",false,,"S16",,false
+US16-000001,"Head_Type_1",true,"0",,,,,,,,false,false,"0",false,,"US16",,false
+US16-000004,"Head_Type_2",true,"0",,,,,,,,false,false,"0",false,,"US16",,false
+US16-000007,"Head_Type_3",true,"0",,,,,,,,false,false,"0",false,,"US16",,false
+US16-000010,"Head_Type_4",true,"0",,,,,,,,false,false,"0",false,,"US16",,false
+F32-000003,"Horiz_Spacing",false,"0.0",,,,,,,,false,false,"0.0",false,,"F32",,false
+SBR-001015,"I/O Configuration Error",false,"0",,,,,,,"Active if actual I/O configuration and project I/O configuration do not match",,,,false,,"SBR",,false
+SBR-001014,"I/O Error",false,"0",,,,,,,"Active for any module error (such as a blown fuse)",,,,false,,"SBR",,false
+C-000030,"IAI_Fault_Reset_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+AR1US8-000001,"IAI_Outputs()",FALSE,,,,,,256,,,,,,false,,"AR1US8",
+AR1US8-000001(1),"IAI_Outputs(1)",FALSE,"0",,,,,256,,,,,,false,,"AR1US8",,false
+AR1US8-000001(2),"IAI_Outputs(2)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(3),"IAI_Outputs(3)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(4),"IAI_Outputs(4)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(5),"IAI_Outputs(5)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(6),"IAI_Outputs(6)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(7),"IAI_Outputs(7)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(8),"IAI_Outputs(8)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(9),"IAI_Outputs(9)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(10),"IAI_Outputs(10)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(11),"IAI_Outputs(11)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(12),"IAI_Outputs(12)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(13),"IAI_Outputs(13)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(14),"IAI_Outputs(14)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(15),"IAI_Outputs(15)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(16),"IAI_Outputs(16)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(17),"IAI_Outputs(17)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(18),"IAI_Outputs(18)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(19),"IAI_Outputs(19)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(20),"IAI_Outputs(20)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(21),"IAI_Outputs(21)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(22),"IAI_Outputs(22)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(23),"IAI_Outputs(23)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(24),"IAI_Outputs(24)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(25),"IAI_Outputs(25)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(26),"IAI_Outputs(26)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(27),"IAI_Outputs(27)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(28),"IAI_Outputs(28)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(29),"IAI_Outputs(29)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(30),"IAI_Outputs(30)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(31),"IAI_Outputs(31)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(32),"IAI_Outputs(32)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(33),"IAI_Outputs(33)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(34),"IAI_Outputs(34)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(35),"IAI_Outputs(35)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(36),"IAI_Outputs(36)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(37),"IAI_Outputs(37)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(38),"IAI_Outputs(38)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(39),"IAI_Outputs(39)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(40),"IAI_Outputs(40)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(41),"IAI_Outputs(41)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(42),"IAI_Outputs(42)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(43),"IAI_Outputs(43)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(44),"IAI_Outputs(44)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(45),"IAI_Outputs(45)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(46),"IAI_Outputs(46)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(47),"IAI_Outputs(47)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(48),"IAI_Outputs(48)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(49),"IAI_Outputs(49)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(50),"IAI_Outputs(50)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(51),"IAI_Outputs(51)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(52),"IAI_Outputs(52)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(53),"IAI_Outputs(53)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(54),"IAI_Outputs(54)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(55),"IAI_Outputs(55)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(56),"IAI_Outputs(56)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(57),"IAI_Outputs(57)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(58),"IAI_Outputs(58)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(59),"IAI_Outputs(59)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(60),"IAI_Outputs(60)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(61),"IAI_Outputs(61)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(62),"IAI_Outputs(62)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(63),"IAI_Outputs(63)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(64),"IAI_Outputs(64)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(65),"IAI_Outputs(65)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(66),"IAI_Outputs(66)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(67),"IAI_Outputs(67)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(68),"IAI_Outputs(68)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(69),"IAI_Outputs(69)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(70),"IAI_Outputs(70)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(71),"IAI_Outputs(71)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(72),"IAI_Outputs(72)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(73),"IAI_Outputs(73)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(74),"IAI_Outputs(74)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(75),"IAI_Outputs(75)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(76),"IAI_Outputs(76)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(77),"IAI_Outputs(77)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(78),"IAI_Outputs(78)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(79),"IAI_Outputs(79)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(80),"IAI_Outputs(80)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(81),"IAI_Outputs(81)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(82),"IAI_Outputs(82)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(83),"IAI_Outputs(83)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(84),"IAI_Outputs(84)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(85),"IAI_Outputs(85)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(86),"IAI_Outputs(86)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(87),"IAI_Outputs(87)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(88),"IAI_Outputs(88)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(89),"IAI_Outputs(89)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(90),"IAI_Outputs(90)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(91),"IAI_Outputs(91)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(92),"IAI_Outputs(92)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(93),"IAI_Outputs(93)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(94),"IAI_Outputs(94)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(95),"IAI_Outputs(95)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(96),"IAI_Outputs(96)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(97),"IAI_Outputs(97)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(98),"IAI_Outputs(98)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(99),"IAI_Outputs(99)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(100),"IAI_Outputs(100)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(101),"IAI_Outputs(101)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(102),"IAI_Outputs(102)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(103),"IAI_Outputs(103)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(104),"IAI_Outputs(104)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(105),"IAI_Outputs(105)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(106),"IAI_Outputs(106)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(107),"IAI_Outputs(107)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(108),"IAI_Outputs(108)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(109),"IAI_Outputs(109)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(110),"IAI_Outputs(110)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(111),"IAI_Outputs(111)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(112),"IAI_Outputs(112)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(113),"IAI_Outputs(113)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(114),"IAI_Outputs(114)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(115),"IAI_Outputs(115)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(116),"IAI_Outputs(116)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(117),"IAI_Outputs(117)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(118),"IAI_Outputs(118)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(119),"IAI_Outputs(119)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(120),"IAI_Outputs(120)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(121),"IAI_Outputs(121)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(122),"IAI_Outputs(122)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(123),"IAI_Outputs(123)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(124),"IAI_Outputs(124)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(125),"IAI_Outputs(125)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(126),"IAI_Outputs(126)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(127),"IAI_Outputs(127)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(128),"IAI_Outputs(128)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(129),"IAI_Outputs(129)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(130),"IAI_Outputs(130)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(131),"IAI_Outputs(131)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(132),"IAI_Outputs(132)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(133),"IAI_Outputs(133)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(134),"IAI_Outputs(134)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(135),"IAI_Outputs(135)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(136),"IAI_Outputs(136)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(137),"IAI_Outputs(137)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(138),"IAI_Outputs(138)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(139),"IAI_Outputs(139)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(140),"IAI_Outputs(140)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(141),"IAI_Outputs(141)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(142),"IAI_Outputs(142)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(143),"IAI_Outputs(143)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(144),"IAI_Outputs(144)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(145),"IAI_Outputs(145)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(146),"IAI_Outputs(146)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(147),"IAI_Outputs(147)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(148),"IAI_Outputs(148)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(149),"IAI_Outputs(149)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(150),"IAI_Outputs(150)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(151),"IAI_Outputs(151)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(152),"IAI_Outputs(152)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(153),"IAI_Outputs(153)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(154),"IAI_Outputs(154)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(155),"IAI_Outputs(155)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(156),"IAI_Outputs(156)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(157),"IAI_Outputs(157)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(158),"IAI_Outputs(158)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(159),"IAI_Outputs(159)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(160),"IAI_Outputs(160)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(161),"IAI_Outputs(161)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(162),"IAI_Outputs(162)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(163),"IAI_Outputs(163)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(164),"IAI_Outputs(164)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(165),"IAI_Outputs(165)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(166),"IAI_Outputs(166)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(167),"IAI_Outputs(167)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(168),"IAI_Outputs(168)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(169),"IAI_Outputs(169)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(170),"IAI_Outputs(170)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(171),"IAI_Outputs(171)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(172),"IAI_Outputs(172)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(173),"IAI_Outputs(173)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(174),"IAI_Outputs(174)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(175),"IAI_Outputs(175)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(176),"IAI_Outputs(176)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(177),"IAI_Outputs(177)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(178),"IAI_Outputs(178)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(179),"IAI_Outputs(179)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(180),"IAI_Outputs(180)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(181),"IAI_Outputs(181)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(182),"IAI_Outputs(182)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(183),"IAI_Outputs(183)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(184),"IAI_Outputs(184)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(185),"IAI_Outputs(185)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(186),"IAI_Outputs(186)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(187),"IAI_Outputs(187)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(188),"IAI_Outputs(188)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(189),"IAI_Outputs(189)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(190),"IAI_Outputs(190)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(191),"IAI_Outputs(191)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(192),"IAI_Outputs(192)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(193),"IAI_Outputs(193)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(194),"IAI_Outputs(194)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(195),"IAI_Outputs(195)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(196),"IAI_Outputs(196)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(197),"IAI_Outputs(197)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(198),"IAI_Outputs(198)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(199),"IAI_Outputs(199)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(200),"IAI_Outputs(200)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(201),"IAI_Outputs(201)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(202),"IAI_Outputs(202)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(203),"IAI_Outputs(203)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(204),"IAI_Outputs(204)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(205),"IAI_Outputs(205)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(206),"IAI_Outputs(206)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(207),"IAI_Outputs(207)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(208),"IAI_Outputs(208)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(209),"IAI_Outputs(209)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(210),"IAI_Outputs(210)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(211),"IAI_Outputs(211)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(212),"IAI_Outputs(212)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(213),"IAI_Outputs(213)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(214),"IAI_Outputs(214)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(215),"IAI_Outputs(215)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(216),"IAI_Outputs(216)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(217),"IAI_Outputs(217)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(218),"IAI_Outputs(218)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(219),"IAI_Outputs(219)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(220),"IAI_Outputs(220)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(221),"IAI_Outputs(221)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(222),"IAI_Outputs(222)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(223),"IAI_Outputs(223)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(224),"IAI_Outputs(224)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(225),"IAI_Outputs(225)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(226),"IAI_Outputs(226)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(227),"IAI_Outputs(227)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(228),"IAI_Outputs(228)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(229),"IAI_Outputs(229)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(230),"IAI_Outputs(230)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(231),"IAI_Outputs(231)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(232),"IAI_Outputs(232)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(233),"IAI_Outputs(233)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(234),"IAI_Outputs(234)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(235),"IAI_Outputs(235)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(236),"IAI_Outputs(236)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(237),"IAI_Outputs(237)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(238),"IAI_Outputs(238)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(239),"IAI_Outputs(239)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(240),"IAI_Outputs(240)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(241),"IAI_Outputs(241)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(242),"IAI_Outputs(242)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(243),"IAI_Outputs(243)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(244),"IAI_Outputs(244)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(245),"IAI_Outputs(245)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(246),"IAI_Outputs(246)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(247),"IAI_Outputs(247)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(248),"IAI_Outputs(248)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(249),"IAI_Outputs(249)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(250),"IAI_Outputs(250)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(251),"IAI_Outputs(251)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(252),"IAI_Outputs(252)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(253),"IAI_Outputs(253)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(254),"IAI_Outputs(254)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(255),"IAI_Outputs(255)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+AR1US8-000001(256),"IAI_Outputs(256)",FALSE,"0",,,,,,,,,,,false,,"AR1US8",,false
+C-000120,"IAI_Power_Cylce",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000119,"IAI_Power_Cylce_dn",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000013,"IAI_Reset",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000148,"IAI_Reset_bit",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+SWRW-001758,"Identify Module Base Number",false,"0",,,,,,,"Base number of module to be identified (See ""Requested Module Name"" tag)",,,,false,,"SWRW",,false
+SWRW-001757,"Identify Module Group Number",false,"0",,,,,,,"Group number of module to be identified (See ""Requested Module Name"" tag)",,,,false,,"SWRW",,false
+SBRW-001005,"Identify Module Request bit",false,"0",,,,,,,"Set On to refresh ""Requested Module Name"" tag per the 3 ""Identify"" GBS tags",,,,false,,"SBRW",,false
+SWRW-001759,"Identify Module Slot Number",false,"0",,,,,,,"Slot number of module to be identified (See ""Requested Module Name"" tag)",,,,false,,"SWRW",,false
+C-000183,"Inch/Stamp",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000200,"Inch/Stamp_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000184,"Inch_Reverse",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000194,"Inch_Reverse_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+SBRW-001002,"Initiate_New_Date",false,"0",,,,,,,"Set On to change clock date (see ""Clock Year Set"" tag)",,,,false,,"SBRW",,false
+SBRW-001001,"Initiate_New_Time",false,"0",,,,,,,"Set On to change clock time (see ""Clock Hours Set"" tag)",,,,false,,"SBRW",,false
+F32-000004,"Input_Part_Depth",false,"0.0",,,,,,,,false,false,"0.0",false,,"F32",,false
+SWR-001504,"Last Logic Scan Time [x100=usec]",false,"0",,,,,,,"Most recent logic scan time",,,,false,,"SWR",,false
+SWR-001501,"Last Scan Interval [x100=usec]",false,"0",,,,,,,"Most recent overall scan time",,,,false,,"SWR",,false
+F32-000005,"Length_Offset",false,"0.0",,,,,,,,false,false,"0.0",false,,"F32",,false
+MST-0.0.0.1,"MST-0.0.0.1",false,"0",,,,,,,"RS232 Heartbeat Timeout Bit",false,false,"0",false,"MST-0.0.0.1","MST",,false
+MST-0.0.0.2,"MST-0.0.0.2",false,"0",,,,,,,"RS232 Port Buffer Full Bit (95% Full)",false,false,"0",false,"MST-0.0.0.2","MST",,false
+MST-0.0.0.3,"MST-0.0.0.3",false,"0",,,,,,,"RS232 Port Ready Bit",false,false,"0",false,"MST-0.0.0.3","MST",,false
+MST-0.0.0.33,"MST-0.0.0.33",false,"0",,,,,,,"RS485 Heartbeat Timeout Bit",false,false,"0",false,"MST-0.0.0.33","MST",,false
+MST-0.0.0.34,"MST-0.0.0.34",false,"0",,,,,,,"RS485 Port Buffer Full Bit (95% Full)",false,false,"0",false,"MST-0.0.0.34","MST",,false
+MST-0.0.0.35,"MST-0.0.0.35",false,"0",,,,,,,"RS485 Port Ready Bit",false,false,"0",false,"MST-0.0.0.35","MST",,false
+MST-0.0.0.65,"MST-0.0.0.65",false,"0",,,,,,,"Ethernet Heartbeat Timeout Bit",false,false,"0",false,"MST-0.0.0.65","MST",,false
+MST-0.0.0.66,"MST-0.0.0.66",false,"0",,,,,,,"Ethernet Port Buffer Full Bit (95% Full)",false,false,"0",false,"MST-0.0.0.66","MST",,false
+MST-0.0.0.67,"MST-0.0.0.67",false,"0",,,,,,,"Ethernet Port Ready Bit",false,false,"0",false,"MST-0.0.0.67","MST",,false
+MST-0.1.4.25,"MST-0.1.4.25",false,"0",,,,,,,"Module Failed",false,false,"0",false,"MST-0.1.4.25","MST",,false
+MST-0.1.4.26,"MST-0.1.4.26",false,"0",,,,,,,"Missing 24V",false,false,"0",false,"MST-0.1.4.26","MST",,false
+MST-0.1.4.57,"MST-0.1.4.57",false,"0",,,,,,,"Under Range Error (1)",false,false,"0",false,"MST-0.1.4.57","MST",,false
+MST-0.1.4.58,"MST-0.1.4.58",false,"0",,,,,,,"Under Range Error (2)",false,false,"0",false,"MST-0.1.4.58","MST",,false
+MST-0.1.4.59,"MST-0.1.4.59",false,"0",,,,,,,"Under Range Error (3)",false,false,"0",false,"MST-0.1.4.59","MST",,false
+MST-0.1.4.60,"MST-0.1.4.60",false,"0",,,,,,,"Under Range Error (4)",false,false,"0",false,"MST-0.1.4.60","MST",,false
+MST-0.1.4.89,"MST-0.1.4.89",false,"0",,,,,,,"Over Range Error (1)",false,false,"0",false,"MST-0.1.4.89","MST",,false
+MST-0.1.4.90,"MST-0.1.4.90",false,"0",,,,,,,"Over Range Error (2)",false,false,"0",false,"MST-0.1.4.90","MST",,false
+MST-0.1.4.91,"MST-0.1.4.91",false,"0",,,,,,,"Over Range Error (3)",false,false,"0",false,"MST-0.1.4.91","MST",,false
+MST-0.1.4.92,"MST-0.1.4.92",false,"0",,,,,,,"Over Range Error (4)",false,false,"0",false,"MST-0.1.4.92","MST",,false
+C-000021,"Machine_Manual_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000185,"Manual_Mode",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000176,"Master_Alarm",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000004,"Midnight",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+SBR-001013,"Noncritical Error Bit",false,"0",,,,,,,"Active when a noncritical error is present",,,,false,,"SBR",,false
+SWR-000021,"Noncritical Error Log 01",false,"0",,,,,,,"Most recent noncritical error",,,,false,,"SWR",,false
+SWR-000022,"Noncritical Error Log 02",false,"0",,,,,,,"2nd most recent noncritical error",,,,false,,"SWR",,false
+SWR-000023,"Noncritical Error Log 03",false,"0",,,,,,,"3rd most recent noncritical error",,,,false,,"SWR",,false
+SWR-000024,"Noncritical Error Log 04",false,"0",,,,,,,"4th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000025,"Noncritical Error Log 05",false,"0",,,,,,,"5th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000026,"Noncritical Error Log 06",false,"0",,,,,,,"6th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000027,"Noncritical Error Log 07",false,"0",,,,,,,"7th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000028,"Noncritical Error Log 08",false,"0",,,,,,,"8th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000029,"Noncritical Error Log 09",false,"0",,,,,,,"9th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000030,"Noncritical Error Log 10",false,"0",,,,,,,"10th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000031,"Noncritical Error Log 11",false,"0",,,,,,,"11th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000032,"Noncritical Error Log 12",false,"0",,,,,,,"12th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000033,"Noncritical Error Log 13",false,"0",,,,,,,"13th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000034,"Noncritical Error Log 14",false,"0",,,,,,,"14th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000035,"Noncritical Error Log 15",false,"0",,,,,,,"15th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000036,"Noncritical Error Log 16",false,"0",,,,,,,"16th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000037,"Noncritical Error Log 17",false,"0",,,,,,,"17th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000038,"Noncritical Error Log 18",false,"0",,,,,,,"18th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000039,"Noncritical Error Log 19",false,"0",,,,,,,"19th most recent noncritical error",,,,false,,"SWR",,false
+SWR-000040,"Noncritical Error Log 20",false,"0",,,,,,,"20th most recent noncritical error",,,,false,,"SWR",,false
+SSTR-000021,"Noncritical Error Log String 01",false,,,,50,,,,"Most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000022,"Noncritical Error Log String 02",false,,,,50,,,,"2nd most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000023,"Noncritical Error Log String 03",false,,,,50,,,,"3rd most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000024,"Noncritical Error Log String 04",false,,,,50,,,,"4th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000025,"Noncritical Error Log String 05",false,,,,50,,,,"5th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000026,"Noncritical Error Log String 06",false,,,,50,,,,"6th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000027,"Noncritical Error Log String 07",false,,,,50,,,,"7th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000028,"Noncritical Error Log String 08",false,,,,50,,,,"8th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000029,"Noncritical Error Log String 09",false,,,,50,,,,"9th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000030,"Noncritical Error Log String 10",false,,,,50,,,,"10th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000031,"Noncritical Error Log String 11",false,,,,50,,,,"11th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000032,"Noncritical Error Log String 12",false,,,,50,,,,"12th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000033,"Noncritical Error Log String 13",false,,,,50,,,,"13th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000034,"Noncritical Error Log String 14",false,,,,50,,,,"14th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000035,"Noncritical Error Log String 15",false,,,,50,,,,"15th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000036,"Noncritical Error Log String 16",false,,,,50,,,,"16th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000037,"Noncritical Error Log String 17",false,,,,50,,,,"17th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000038,"Noncritical Error Log String 18",false,,,,50,,,,"18th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000039,"Noncritical Error Log String 19",false,,,,50,,,,"19th most recent noncritical error message",,,,false,,"SSTR",,false
+SSTR-000040,"Noncritical Error Log String 20",false,,,,50,,,,"20th most recent noncritical error message",,,,false,,"SSTR",,false
+S16-000030,"Num_of_Springs_Needed_sp",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000029,"Num_of_Springs_Placed",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000027,"Num_of_Springs_sp",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+SWRW-000251,"Number of Critical Errors",false,"0",,,,,,,"Number of critical errors",,,,false,,"SWRW",,false
+SWRW-000252,"Number of Non-critical Errors",false,"0",,,,,,,"Number of noncritical errors",,,,false,,"SWRW",,false
+SSTR-000105,"PLC LCD Display[CPU]",false,,,,50,,,,"PLC LCD Data Display",,,,false,,"SSTR",,false
+C-000005,"PLC_Time_Sync",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000116,"PS2_Failed",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000078,"PS2_OK",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000117,"PS3_Failed",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000079,"PS3_OK",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+F32-000006,"Part_Gripped",false,"0.0",,,,,,,,false,false,"0.0",false,,"F32",,false
+F32-000007,"Part_Length",false,"0.0",,,,,,,,false,false,"0.0",false,,"F32",,false
+US16-000002,"Part_Length_1",true,"0",,,,,,,,false,false,"0",false,,"US16",,false
+US16-000005,"Part_Length_2",true,"0",,,,,,,,false,false,"0",false,,"US16",,false
+US16-000008,"Part_Length_3",true,"0",,,,,,,,false,false,"0",false,,"US16",,false
+US16-000011,"Part_Length_4",true,"0",,,,,,,,false,false,"0",false,,"US16",,false
+F32-000008,"Part_Protrude",false,"0.0",,,,,,,,false,false,"0.0",false,,"F32",,false
+STR-000021,"Part_Recipe_ASCII",false,"Part 1",,,40,,,,,,,,false,,"STR",,false
+S16-000034,"Parts_Remaining",false,"0",,,,,,,,false,false,"0",false,,"S16",,false
+SWR-001505,"Peak Logic Scan Time [x100=usec]",false,"0",,,,,,,"Longest logic scan time",,,,false,,"SWR",,false
+SWR-001502,"Peak Scan Interval [x100=usec]",false,"0",,,,,,,"Longest overall scan time",,,,false,,"SWR",,false
+SBRW-001006,"Portable Memory Device Eject",false,"0",,,,,,,"Set On to initiate Eject.  System will set Off when Eject is completed",,,,false,,"SBRW",,false
+SBR-000001,"Portable Memory Device Ready",false,"0",,,,,,,"PMD is installed and ready to use",,,,false,,"SBR",,false
+C-000040,"Power_Loss_Alarm",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+S16-000002,"Power_Loss_acc",false,"0",,,,,,,,false,false,"0",false,,"S16",,false
+C-000041,"Power_Loss_dn",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000043,"Power_OK",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+S16-000003,"Power_OK_acc",false,"0",,,,,,,,false,false,"0",false,,"S16",,false
+C-000211,"Pressure_Switch_On",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+SWR-001512,"Program Memory Size",false,"0",,,,,,,"Current percentage of CPU memory used by the project",,,,false,,"SWR",,false
+F32-000009,"Radial_Offset",false,"0.0",,,,,,,,false,false,"0.0",false,,"F32",,false
+SBRW-001003,"Refresh Critical Error Log",false,"0",,,,,,,"Set On to refresh the ""Critical Error Log""",,,,false,,"SBRW",,false
+SBRW-001004,"Refresh Non-Critical Error Log",false,"0",,,,,,,"Set On to refresh the ""Noncritical Error Log""",,,,false,,"SBRW",,false
+SSTR-000103,"Requested Module Name",false,,,,50,,,,"Name of specified module (see ""Identify Module Request bit"")",,,,false,,"SSTR",,false
+C-000201,"Robot_Comm_Fail",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000202,"Robot_Commisioning_Mode",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000018,"Robot_Fault",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000205,"Robot_Mode",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000019,"Robot_Needs_Servive_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000150,"Robot_OK_to_start",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+S16-000006,"Robot_Runtime_Hours",true,"2",,,,,,,,false,false,"0",false,,"S16",,false
+C-000048,"Robot_Runtime_Hours_Total",true,"0",,,,,,,,false,false,"0",false,,"C",,false
+S16-000005,"Robot_Runtime_Minutes",true,"53",,,,,,,,false,false,"0",false,,"S16",,false
+C-000047,"Robot_Runtime_One_Hr",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000044,"Robot_Runtime_One_Min",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+S16-000004,"Robot_Runtime_Seconds",true,"56",,,,,,,,false,false,"0",false,,"S16",,false
+C-000203,"Robot_running",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+F32-000010,"Rod_Diameter",false,"0.0",,,,,,,,false,false,"0.0",false,,"F32",,false
+US16-000003,"Rod_Diameter_1",true,"0",,,,,,,,false,false,"0",false,,"US16",,false
+US16-000006,"Rod_Diameter_2",true,"0",,,,,,,,false,false,"0",false,,"US16",,false
+US16-000009,"Rod_Diameter_3",true,"0",,,,,,,,false,false,"0",false,,"US16",,false
+US16-000012,"Rod_Diameter_4",true,"0",,,,,,,,false,false,"0",false,,"US16",,false
+S16-000035,"Row_Count",false,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000036,"Run_Qty",false,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000009,"Runtime_Hours_2DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000012,"Runtime_Hours_3DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000015,"Runtime_Hours_4DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000018,"Runtime_Hours_5DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000021,"Runtime_Hours_6DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000024,"Runtime_Hours_7DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000008,"Runtime_Hours_Yesterday",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000010,"Runtime_Minutes_2DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000013,"Runtime_Minutes_3DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000016,"Runtime_Minutes_4DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000019,"Runtime_Minutes_5DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000022,"Runtime_Minutes_6DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000025,"Runtime_Minutes_7DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S32-000001,"Runtime_Minutes_Yesterday",true,"0",,,,,,,,false,false,"0",false,,"S32",,false
+S16-000011,"Runtime_Seconds_2DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000014,"Runtime_Seconds_3DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000017,"Runtime_Seconds_4DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000020,"Runtime_Seconds_5DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000023,"Runtime_Seconds_6DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000026,"Runtime_Seconds_7DA",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+S16-000007,"Runtime_Seconds_Yesterday",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+C-000008,"Shutdown",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+S16-000028,"Springs_Placed_acc",true,"0",,,,,,,,false,false,"0",false,,"S16",,false
+C-000014,"Stacklight_Amber",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000025,"Stacklight_Amber_Man_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000015,"Stacklight_Blue",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000027,"Stacklight_Blue_Man_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000016,"Stacklight_Green",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000026,"Stacklight_Green_Man_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000017,"Stacklight_Red",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000024,"Stacklight_Red_Man_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000206,"Stamp",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+SBR-001010,"Switch in Run Bit",false,"0",,,,,,,"Active if CPU Switch is up (Run)",,,,false,,"SBR",,false
+SBR-001011,"Switch in Stop Bit",false,"0",,,,,,,"Active if CPU Switch is down (Stop)",,,,false,,"SBR",,false
+C-000190,"Temp_Sensor",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000191,"Thru_Beam_Sensor",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+SWR-001507,"Total Scan Count1",false,"0",,,,,,,"Total number of scans since entering Run mode (S32 low word)",,,,false,,"SWR",,false
+SWR-001508,"Total Scan Count2",false,"0",,,,,,,"Total number of scans since entering Run mode (S32 high word)",,,,false,,"SWR",,false
+C-000186,"Valve_Reset",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000193,"Valve_Reset_HMI",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+F32-000011,"Vert_Spacing",false,"0.0",,,,,,,,false,false,"0.0",false,,"F32",,false
+C-000031,"Was_DI-0.1.2.1",false,"0",,,,,,,,false,false,"0",false,,"DI",,false
+C-000032,"Was_DI-0.1.2.2",false,"0",,,,,,,,false,false,"0",false,,"DI",,false
+C-000033,"Was_DI-0.1.2.3",false,"0",,,,,,,,false,false,"0",false,,"DI",,false
+C-000034,"Was_DI-0.1.2.4",false,"0",,,,,,,,false,false,"0",false,,"DI",,false
+C-000035,"Was_DI-0.1.2.5",false,"0",,,,,,,,false,false,"0",false,,"DI",,false
+C-000036,"Was_DI-0.1.2.6",false,"0",,,,,,,,false,false,"0",false,,"DI",,false
+C-000037,"Was_DI-0.1.2.7",false,"0",,,,,,,,false,false,"0",false,,"DI",,false
+C-000038,"Was_DI-0.1.2.8",false,"0",,,,,,,,false,false,"0",false,,"DI",,false
+SBR-001016,"Watchdog Timeout",false,"0",,,,,,,"Active if the overall scan time (logic and I/O) has exceeded the limit set in the project",,,,false,,"SBR",,false
+C-000050,"Wipe_2DA_Time_Data",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000051,"Wipe_3DA_Time_Data",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000052,"Wipe_4DA_Time_Data",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000053,"Wipe_5DA_Time_Data",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000054,"Wipe_6DA_Time_Data",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000055,"Wipe_7DA_Time_Data",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+C-000056,"Wipe_Yesterdays_Time_Data",false,"0",,,,,,,,false,false,"0",false,,"C",,false
+AR1S16-000002,"fanuc_In()",FALSE,,,,,,24,,,,,,false,,"AR1S16",
+AR1S16-000002(1),"fanuc_In(1)",FALSE,"0",,,,,24,,,,,,false,,"AR1S16",,true
+AR1S16-000002,"fanuc_In(1):1",,,,,,,,,"CMD Enabled",,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):2",,,,,,,,,"system ready",,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):3",,,,,,,,,"prg running",,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):4",,,,,,,,,"prg paused",,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):5",,,,,,,,,"motion held",,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):6",,,,,,,,,"Fault",,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):7",,,,,,,,,"at perch",,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):8",,,,,,,,,"TP Enabled",,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):9",,,,,,,,,"Batt Alm",,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):10",,,,,,,,,"Busy",,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):11",,,,,,,,,,,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):12",,,,,,,,,,,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):13",,,,,,,,,,,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):14",,,,,,,,,,,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):15",,,,,,,,,,,,,,,,,TRUE
+AR1S16-000002,"fanuc_In(1):16",,,,,,,,,,,,,,,,,TRUE
+AR1S16-000002(2),"fanuc_In(2)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(3),"fanuc_In(3)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(4),"fanuc_In(4)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(5),"fanuc_In(5)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(6),"fanuc_In(6)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(7),"fanuc_In(7)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(8),"fanuc_In(8)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(9),"fanuc_In(9)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(10),"fanuc_In(10)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(11),"fanuc_In(11)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(12),"fanuc_In(12)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(13),"fanuc_In(13)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(14),"fanuc_In(14)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(15),"fanuc_In(15)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(16),"fanuc_In(16)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(17),"fanuc_In(17)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(18),"fanuc_In(18)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(19),"fanuc_In(19)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(20),"fanuc_In(20)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(21),"fanuc_In(21)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(22),"fanuc_In(22)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(23),"fanuc_In(23)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000002(24),"fanuc_In(24)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001,"fanuc_out()",FALSE,,,,,,24,,,,,,false,,"AR1S16",
+AR1S16-000001(1),"fanuc_out(1)",FALSE,"0",,,,,24,,,,,,false,,"AR1S16",,false
+AR1S16-000001(2),"fanuc_out(2)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(3),"fanuc_out(3)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(4),"fanuc_out(4)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(5),"fanuc_out(5)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(6),"fanuc_out(6)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(7),"fanuc_out(7)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(8),"fanuc_out(8)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(9),"fanuc_out(9)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(10),"fanuc_out(10)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(11),"fanuc_out(11)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(12),"fanuc_out(12)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(13),"fanuc_out(13)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(14),"fanuc_out(14)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(15),"fanuc_out(15)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(16),"fanuc_out(16)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(17),"fanuc_out(17)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(18),"fanuc_out(18)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(19),"fanuc_out(19)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(20),"fanuc_out(20)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(21),"fanuc_out(21)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(22),"fanuc_out(22)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(23),"fanuc_out(23)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+AR1S16-000001(24),"fanuc_out(24)",FALSE,"0",,,,,,,,,,,false,,"AR1S16",,false
+C-000001,"temp_second",false,"0",,,,,,,,false,false,"0",false,,"C",,false
