@@ -32,7 +32,7 @@ class RealTimePlotter:
         joint_names = ['J1', 'J2', 'J3', 'J4', 'J5', 'J6']
         colors = ['r', 'g', 'b', 'c', 'm', 'y']
         y_limits = [(-100, 100), (-150, 150), (-100, 100), 
-                   (-50, 50), (-30, 30), (-30, 30)]  # Adjust based on your torque ranges
+                   (-50, 50), (-50, 50), (-30, 30)]  # Adjust based on your torque ranges
         
         for i, (ax, name, color, ylim) in enumerate(zip(self.axes, joint_names, colors, y_limits)):
             ax.set_title(f'{name} Torque (Nm)')

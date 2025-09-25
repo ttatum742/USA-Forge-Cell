@@ -3,7 +3,7 @@
 2,furnace_1,"front of furnace1 fixture (for now), taught in UF2 with teaching jig. "
 3,furnace_2,"front of furnace2 fixture (for now), taught in UF2 with teaching jig. "
 4,furnace_approach,"Joint representation, used as a CNT movement otw to whichever furnace is active. Should be taught planar with furnace table, on side closest to robot base. "
-5,pushstart,
+5,pushstart,"after part is placed, robot backs off the gripped amount and changes angle of attack for pushtobackstop, stores LPOS here"
 6,pushend,
 7,output,
 8,calc_pos,
@@ -13,35 +13,35 @@
 12,furnace_pick,active furnace position + place_offset-push distance (UF2 Z)
 13,forge_aprch,"jnt rep, used as cnt otw to forge, part should be kicked out 45deg ready to go into forge. "
 14,forge_diecenter,PR61+PR62
-15,unused,
+15,,
 16,furn1_pick,EE perpendicular to fixture
 17,furn2_pick,EE perpendicular to fixture
 18,furn1_drag,"minimal EE contact, pull part from furnace for easier pick"
 19,furn2_drag,"minimal EE contact, pull part from furnace for easier pick"
 20,zoffset150,self explanatory
-21,approachOffs_t,
+21,,
 22,approachOffs,
-23,pickoffset_t,
+23,approachOffs_t,
 24,pickoffset,
 25,rmvPart,
 26,placeoffset,
-27,placeapproach,
+27,aprchFurnOffs,
 28,push_adj,
 29,backoff_pshStrt,
 30,push_dist1,push distance. calculated in pushtobackstop if AR[1]=1 
 31,push_dist2,push distance. calculated in pushtobackstop if AR[1]=2
-32,frg_pick_ofs,for pulling part from forge. z=part length
+32,above_frg,for forge pick & place. z=part length+3in
 33,pointdown,tool_x offset for after picking. max I could get in roboguide was about +20deg about x
-34,,
-35,,
+34,frgPlace_ofs,"to be used w/ PR14, places rod halfway into die"
+35,pushdist_offs,"-8inches, will throw overtravel error if push goes further, to be used in UF2 during push "
 36,,
 37,,
 38,,
 39,,
-40,,
-41,,
-42,,
-43,,
+40,row1base,taught to leftmost pick point in UF3 w/ jig
+41,row2base,taught to leftmost pick point in UF3 w/ jig
+42,row3base,taught to leftmost pick point in UF3 w/ jig
+43,row4base,taught to leftmost pick point in UF3 w/ jig
 44,,
 45,,
 46,,

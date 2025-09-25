@@ -1,0 +1,61 @@
+/PROG PLACE_FURNACE
+/ATTR
+/MN
+   1:  !Called with AR[1] 1 or 2 ;
+   2:   ;
+   3:  !AR[1]: ;
+   4:  !Left Furnace = 1 ;
+   5:  !Right Furnace = 2 ;
+   6:   ;
+   7:  !All furnace positions are ;
+   8:  !relative to UF2 ;
+   9:  UFRAME_NUM=2 ;
+  10:  UTOOL_NUM=1 ;
+  11:   ;
+  12:  !reset backoff offset ;
+  13:  PR[29,3:backoff_pshStrt]=R[15:part_gripped] ;
+  14:  PR[29,2:backoff_pshStrt]=R[16:radial_offset] ;
+  15:  PR[29,5:backoff_pshStrt]=0 ;
+  16:   ;
+  17:  !approach furnace ;
+  18:  J PR[4:furnace_approach] 100% CNT100 ;
+  19:   ;
+  20:  !Set active furnace ;
+  21:  IF (AR[1]=1) THEN ;
+  22:       PR[55:activeFurnace]=PR[2:furnace_1] ;
+  23:  ELSE ;
+  24:       IF (AR[1]=2) THEN ;
+  25:           PR[55:activeFurnace]=PR[3:furnace_2] ;
+  26:       ELSE ;
+  27:           MESSAGE[AR[1] undefined] ;
+  28:       ENDIF ;
+  29:  ENDIF ;
+  30:   ;
+  31:   ;
+  32:  !Approach activeFurnace ;
+  33:  L PR[55:activeFurnace] 1250mm/sec CNT20 Offset,PR[27:aprchFrnOffs] ;
+  34:  L PR[55:activeFurnace] 750mm/sec FINE Offset,PR[26:placeoffset] ;
+  35:  CALL GRIPPER_OPEN ;
+  36:   ;
+  37:  !add rotational offset ;
+  38:  !to avoid fixture collisions ;
+  39:  PR[29,5:backoff_pshStrt]=33 ;
+  40:   ;
+  41:  !add +y adjustment ;
+  42:  PR[29,2:backoff_pshStrt]=(PR[29,2:backoff_pshStrt]+20) ;
+  43:   ;
+  44:  !Move to pushstart ;
+  45:  L PR[55:activeFurnace] 1000mm/sec FINE Offset,PR[29:backoff_pshStrt] ;
+  46:   ;
+  47:  !store pushstart PR for later ;
+  48:  PR[5:pushstart]=LPOS ;
+  49:   ;
+  50:  !modify offset to ;
+  51:  !clear gripper fingers ;
+  52:  PR[29,3:backoff_pshStrt]=(PR[29,3:backoff_pshStrt]+25) ;
+  53:   ;
+  54:  !close gripper for force push ;
+  55:  L PR[55:activeFurnace] 2000mm/sec FINE Offset,PR[29:backoff_pshStrt] ;
+  56:  CALL GRIPPER_CLOSE ;
+/POS
+/END

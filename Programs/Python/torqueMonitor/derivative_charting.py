@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 class RealTimeDerivativePlotter:
-    def __init__(self, max_points=500):
+    def __init__(self, max_points=1500):
         self.max_points = max_points
         self.data_queue = queue.Queue()
         self.prev_torques = None
@@ -33,7 +33,7 @@ class RealTimeDerivativePlotter:
         # Configure each joint plot
         joint_names = ['J1', 'J2', 'J3', 'J4', 'J5', 'J6']
         colors = ['r', 'g', 'b', 'c', 'm', 'y']
-        y_limits = [(-2000, 2000)]*6  # Adjust based on expected derivative ranges
+        y_limits = [(-1000, 1000)]*6  # Adjust based on expected derivative ranges
         
         for i, (ax, name, color, ylim) in enumerate(zip(self.axes, joint_names, colors, y_limits)):
             ax.set_title(f'{name} Torque Derivative (Nm/s)')
