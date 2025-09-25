@@ -10,7 +10,7 @@
    7:  !All furnace positions are ;
    8:  !relative to UF2 ;
    9:  UFRAME_NUM=2 ;
-  10:  UTOOL_NUM=1 ;
+  10:  UTOOL_NUM=2 ;
   11:   ;
   12:  !reset backoff offset ;
   13:  PR[29,3:backoff_pshStrt]=R[15:part_gripped] ;
@@ -37,7 +37,7 @@
   34:  L PR[55:activeFurnace] 750mm/sec FINE Offset,PR[26:placeoffset] ;
   35:  CALL GRIPPER_OPEN ;
   36:   ;
-  37:  !add rotational offset ;
+  37:  !add pitch offset ;
   38:  !to avoid fixture collisions ;
   39:  PR[29,5:backoff_pshStrt]=33 ;
   40:   ;

@@ -60,7 +60,6 @@ SAFETY NOTES
 ------------
 - Test in simulation first (roboguide programs available)
 - Use charting programs to visualize torque patterns before threshold changes
-- Verify SAFETY_CHECK.LS functionality
 - Implement gradual threshold changes
 
 For detailed information, see CLAUDE.md in the project root.

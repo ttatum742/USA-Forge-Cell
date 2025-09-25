@@ -1,4 +1,4 @@
-/PROG  GET_JIG
+/PROG  STORE_JIG
 /ATTR
 OWNER		= MNEDITOR;
 COMMENT		= "";
@@ -24,33 +24,20 @@ LOCAL_REGISTERS	= 0,0,0;
 AUTO_SINGULARITY_HEADER;
   ENABLE_SINGULARITY_AVOIDANCE   : TRUE;
 /MN
-   1:  CALL GRIPPER_OPEN ;
-   2:  UTOOL_NUM=3 ;
+   1:   ;
+   2:  UTOOL_NUM=2 ;
    3:  UFRAME_NUM=3 ;
    4:   ;
    5:  !move to jig approach ;
    6:   ;
-   7:  !pick jig ;
-   8:  CALL GRIPPER_CLOSE ;
+   7:   ;
+   8:   ;
    9:   ;
-  10:  !extract jig ;
+  10:   ;
   11:   ;
   12:   ;
   13:   ;
   14:   ;
-  15:  !all forge positions UF4 ;
-  16:  UFRAME_NUM=4 ;
-  17:   ;
-  18:  !move to forge approach ; 
-  19:   ;
-  20:   ;
-  21:  MESSAGE[TEACH PR[62] USING JIG] ;
-  22:  MESSAGE[TOUCH JIG TIP TO DIE FACE] ;
-  23:   ;
-  24:  MESSAGE[THEN TEACH PR[61]] ;
-  25:  MESSAGE[INSIDE DIE CENTER] ;
-  26:  MESSAGE[CALL STORE_JIG WHEN DONE]  ;
-  27:   ;
-  28:  MESSAGE[SEE DOCUMENTATION FOR DETAILS] ;
+  15:   ;
 /POS
 /END

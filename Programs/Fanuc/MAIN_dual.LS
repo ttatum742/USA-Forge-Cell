@@ -55,7 +55,7 @@ AUTO_SINGULARITY_HEADER;
   30:   ;
   31: !Main processing loop;
   32: LBL[1]  ;
-  33: FOR R[6:rowCount]=1 TO 4  ;
+  33: FOR R[6:rowCount]=1 TO 3  ;
   34:   FOR R[7:colCount]=1 TO 16  ;
   35:     !Check if any furnace is ready for pickup (priority);
   36:     CALL CHECK_READY_FURNACE ;
