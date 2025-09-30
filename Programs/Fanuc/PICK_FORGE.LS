@@ -1,4 +1,4 @@
-/PROG PICKFORGE
+/PROG PICK_FORGE
 /ATTR
 /MN
    1:   !All forge positions are relative to UF4 ;

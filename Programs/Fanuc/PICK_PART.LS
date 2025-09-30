@@ -21,6 +21,6 @@
   18: CALL GRIPPER_CLOSE ;
   19:L PR[11:pick_pos] 1000mm/sec CNT100 Offset,PR[25:rmvPart] ;
   20:   !add safe array exit motion instructions! ;
-  21:L PR[11:pick_pos] 4000mm/sec CNT100 Offset,PR[25:rmvPart] Tool_Offset,PR[33:pointdown] ;
+  21://L PR[11:pick_pos] 4000mm/sec CNT100 Offset,PR[25:rmvPart] Tool_Offset,PR[33:pointdown] ;
 /POS
 /END

@@ -24,7 +24,7 @@ LOCAL_REGISTERS	= 0,0,0;
 AUTO_SINGULARITY_HEADER;
   ENABLE_SINGULARITY_AVOIDANCE   : TRUE;
 /MN
-   1:J PR[100:zeros] 100% CNT100    ;
+   1:// J PR[100:zeros] 100% CNT100    ;
    2:J PR[7:output] 100% CNT100 Offset,PR[20:zoffset150]    ;
    3:L PR[7:output] 500mm/sec FINE    ;
    4:  CALL GRIPPER_OPEN    ;
