@@ -1,7 +1,7 @@
 /PROG CHECK_READY_FURNACE
 /ATTR
 /MN
-: !Check which furnace is ready first (priority);
+: !Check which furnace is ready;
 : R[24:PRIORITY_FURNACE]=0 ;
 : !Check furnace 1;
 : IF (R[22:FURNACE1_STATE]=3) THEN  ;

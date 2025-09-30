@@ -25,17 +25,17 @@
 24,robot,priority_furnace,"Priority furnace (1 or 2, which is ready first)",int
 25,robot,available_furnace,"Available furnace (1 or 2, which can accept part)",int
 26,robot,diedepth,relative to part len,real
-27,,,,
-28,,,,
-29,,,,
-30,robot,baseTool5Z,,
-31,robot,refDia,,
-32,robot,diaOffs,,
-33,,,,
-34,,,,
-35,,,,
-36,,,,
-37,,,,
+27,robot,goodParts,count of good parts output,int
+28,robot,badParts,count of scrap parts output,int
+29,robot,part_volume,calculated part volume in mm³,real
+30,robot,part_weight,part weight only in kg,real
+31,robot,combined_weight,total payload: EE + part weight in kg,real
+32,robot,combined_cog_x,combined center of gravity X offset in mm,real
+33,robot,combined_cog_y,combined center of gravity Y offset in mm,real
+34,robot,combined_cog_z,combined center of gravity Z offset in mm,real
+35,robot,combined_moi_xx,combined moment of inertia XX component,real
+36,robot,combined_moi_yy,combined moment of inertia YY component,real
+37,robot,combined_moi_zz,combined moment of inertia ZZ component,real
 38,,,,
 39,,,,
 40,,,,
@@ -44,6 +44,40 @@
 43,,,,
 44,,,,
 45,,,,
+46,,,,
+47,,,,
+48,,,,
+49,,,,
+50,robot,j1torque,,
+51,robot,j2torque,,
+52,robot,j3torque,,
+53,robot,j4torque,,
+54,robot,j5torque,,
+55,robot,j6torque,,
+56,,,,
+57,,,,
+58,,,,
+59,,,,
+60,,,,
+61,,,,
+62,,,,
+63,,,,
+64,,,,
+65,,,,
+66,,,,
+67,,,,
+68,,,,
+69,,,,
+70,,,,
+71,,,,
+72,,,,
+73,,,,
+74,,,,
+75,,,,
+76,,,,
+77,,,,
+78,,,,
+79,,,,
 46,,,,
 47,,,,
 48,,,,

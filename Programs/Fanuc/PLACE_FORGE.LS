@@ -15,9 +15,8 @@
   12:  CALL GRIPPER_OPEN ;
   13:  L PR[14:forge_place] 750mm/sec FINE Offset,PR[32:above_frg] ;
   14:  L PR[13:forgeApproach] 2000mm/sec FINE ;
-  15:  !send DO to PLC here ;
+  15:   ;
   16:   ;
   17:   ;
-  18:   ;
 /POS
 /END
