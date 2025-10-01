@@ -1,4 +1,4 @@
-/PROG PICK_FURNACE
+4/PROG PICK_FURNACE
 /ATTR
 /MN
    1:  !Called with AR[1] 1 or 2 ;
