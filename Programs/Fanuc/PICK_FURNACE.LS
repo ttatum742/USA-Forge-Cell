@@ -37,16 +37,19 @@
   34:  !CHANGE THIS MOTION INSTRUCTION ;
   35:  L PR[56:activeDrag] 750mm/sec FINE  ;
   36:  CALL GRIPPER_CLOSE ;
-  37:   ;
-  38:  !extract part for regrip;
-  39:  L PR[56:activeDrag] 500mm/sec FINE Offset,PR[21:zoffset235]  ;
-  40:  CALL GRIPPER_OPEN ;
-  41:   ;
-  42:  !Regrip part ;
-  43:  L PR[57:activePick] 750mm/sec FINE ;
-  44:  CALL GRIPPER_CLOSE ;
-  45:   ;
-  46:  !move back to approach position ;
-  47:  J PR[4:furnace_approach] 70% CNT100 ;
+  37:  PAYLOAD[2] ;
+  38:   ;
+  39:  !extract part for regrip;
+  40:  L PR[56:activeDrag] 500mm/sec FINE Offset,PR[21:zoffset235]  ;
+  41:  CALL GRIPPER_OPEN ;
+  42:  PAYLOAD[1] ;
+  43:   ;
+  44:  !Regrip part ;
+  45:  L PR[57:activePick] 750mm/sec FINE ;
+  46:  CALL GRIPPER_CLOSE ;
+  47:  PAYLOAD[2] ;
+  48:   ;
+  49:  !move back to approach position ;
+  50:  J PR[4:furnace_approach] 70% CNT100 ;
 /POS
 /END

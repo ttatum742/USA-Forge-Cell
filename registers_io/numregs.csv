@@ -36,7 +36,7 @@
 35,robot,combined_moi_xx,combined moment of inertia XX component,real
 36,robot,combined_moi_yy,combined moment of inertia YY component,real
 37,robot,combined_moi_zz,combined moment of inertia ZZ component,real
-38,,,,
+38,plc,coolDelay,wait for part to shrink,real
 39,,,,
 40,,,,
 41,,,,

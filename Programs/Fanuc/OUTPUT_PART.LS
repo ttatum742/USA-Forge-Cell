@@ -25,15 +25,21 @@ AUTO_SINGULARITY_HEADER;
   ENABLE_SINGULARITY_AVOIDANCE   : TRUE;
 /MN
    1:// J PR[100:zeros] 100% CNT100    ;
-   2:J PR[7:output] 100% CNT100 Offset,PR[20:zoffset150]    ;
-   3:L PR[7:output] 500mm/sec FINE    ;
-   4:  CALL GRIPPER_OPEN    ;
-   5:   ;
-   6:   ;
-   7:   ;
-   8:   ;
-   9:   ;
-  10:   ;
+   2:  J PR[37:outAprch] 85% CNT50  ;
+   3:   ;
+   4:J PR[7:output] 50% CNT100 Offset,PR[20:zoffset150]    ;
+   5:L PR[7:output] 500mm/sec FINE    ;
+   6:  CALL GRIPPER_OPEN    ;
+   7:  PAYLOAD[1] ;
+   8:  L PR[7:output] 500mm/sec CNT100 Offset,PR[20:zoffset150] ;
+   9:  UTOOL_NUM=2 ;
+  10:  J PR[98:home] 100% FINE ;
   11:   ;
+  12:   ;
+  13:   ;
+  14:   ;
+  15:   ;
+  16:   ;
+  17:   ;
 /POS
 /END
