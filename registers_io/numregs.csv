@@ -40,8 +40,8 @@
 39,robot,hexhead_zofs,feeds forge pick offset ,real
 40,robot,12point_zofs,feeds forge pick offset ,real
 41,curforgepick_zofs,"accounts for height loss during hit, feeds forge pick offset",,real
-42,,,,
-43,,,,
+42,robot,MIN_LOAD_DELAY,Minimum time delay (seconds) between furnace loads to prevent overheating,real
+43,robot,LAST_FURN_LOADED,"Tracks which furnace was loaded last (0=no loads yet, 1=furnace 1, 2=furnace 2)",int
 44,,,,
 45,,,,
 46,,,,
